@@ -1,7 +1,7 @@
 {
-  "name": "my-project",
+  "name": "wled-controller",
   "private": true,
-  "version": "0.0.0",
+  "version": "Beta 26.5.001",
   "type": "module",
   "scripts": {
     "dev": "vite",
