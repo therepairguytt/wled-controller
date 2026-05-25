@@ -3,14 +3,14 @@ import { Hammer, RefreshCcw, Database, HardHat, CodeXml, FileStack } from 'lucid
 
 const MaintenancePage = () => {
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 font-sans selection:bg-amber-500/30">
+    <div className="bg-slate-950 flex items-center justify-center font-sans selection:bg-amber-500/30">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-amber-500/10 blur-[120px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full" />
       </div>
 
       <div className="relative max-w-2xl w-full">
-        <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 md:p-12 shadow-2xl overflow-hidden">
+        <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-3xl p-2 md:p-12 shadow-2xl overflow-hidden">
           
           {/* Header Icon */}
           <div className="flex items-center justify-center mb-8">
