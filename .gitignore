@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 .env
 src/assets/favicon.ico
+backend/__pycache__/*
+backend/routers/__pycache__/*
+database.db
