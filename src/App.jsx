@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import {
   LayoutDashboard, Database, Layers, ListMusic,
-  Radio, Search, Settings2, SplitSquareVertical, CalendarCheck
+  Radio, Search, Settings2, SplitSquareVertical, CalendarCheck, Palette
 } from 'lucide-react'
 
 // Page Imports
@@ -17,6 +17,7 @@ import Settings from './pages/settings'
 import Footer from './components/footer'
 import Header from './components/header'
 import Navbar from './components/navbar'
+import PalletsEffects from './pages/palletsandeffects'
 
 export default function App() {
   // 1. Define the Navigation Configuration
@@ -29,6 +30,7 @@ export default function App() {
     { id: 'broadcasts', label: 'Broadcasts', icon: <Radio size={18} />, component: <Broadcasts /> },
     { id: 'schedule', label: 'Schedule', icon: <CalendarCheck size={18} />, component: <Schedule /> },
     { id: 'query', label: 'Query', icon: <Search size={18} />, component: <Query /> },
+    { id: 'palletseffects', label: 'Pallets & Effects', icon: <Palette size={18} />, component: <PalletsEffects /> },
     { id: 'settings', label: 'Settings', icon: <Settings2 size={18} />, component: <Settings /> },
   ], []);
 
@@ -78,7 +80,7 @@ export default function App() {
       />
 
       <main className={`flex-1 overflow-auto pt-14 pb-12 transition-all duration-300`}>
-        <div className="max-w-6xl mx-auto p-4 md:p-8">
+        <div className="max-w-8xl mx-auto p-4 md:p-8">
            {activeItem ? activeItem.component : <Dashboard />}
         </div>
       </main>
