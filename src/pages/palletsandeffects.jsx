@@ -253,9 +253,9 @@ export default function PalletsEffects() {
                         <Plus size={16} /> CREATE PALETTE
                     </button>
                 </div>
-                <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-2xl">
+                <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950">
                     <table className="w-full text-center text-sm table-auto">
-                        <thead className="bg-slate-700/50 text-slate-400 font-bold uppercase text-[13px] tracking-widest select-none">
+                        <thead className="bg-slate-800/80 text-slate-400 font-bold uppercase text-[13px] tracking-widest">
                             <tr>
                                 <th onClick={() => handlePaletteSortRequest('palettes_id')} className="p-4 cursor-pointer hover:bg-slate-700/80 hover:text-white transition-colors">
                                     <div className="flex items-center justify-center gap-2">Palette ID <SortIndicator currentSort={paletteSort} column="palettes_id" /></div>
@@ -304,9 +304,16 @@ export default function PalletsEffects() {
                             <select 
                                 value={paletteRowsPerPage} 
                                 onChange={e => { setPaletteRowsPerPage(Number(e.target.value)); setPalettePage(1); }}
-                                className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer"
+                                className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer hover:bg-slate-800/40"
                             >
-                                {[5, 10, 25, 50].map(size => <option key={size} value={size}>{size}</option>)}
+                                {[5, 10, 25, 50].map(size => 
+                                <option
+                                key={size}
+                                value={size}
+                                className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer"
+                                >
+                                    {size}
+                                </option>)}
                             </select>
                         </div>
                         <div className="flex items-center gap-4">
@@ -315,14 +322,14 @@ export default function PalletsEffects() {
                                 <button 
                                     disabled={palettePage === 1}
                                     onClick={() => setPalettePage(prev => prev - 1)}
-                                    className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                    className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
                                 >
                                     <ChevronLeft size={16} />
                                 </button>
                                 <button 
                                     disabled={palettePage === totalPalettePages}
                                     onClick={() => setPalettePage(prev => prev + 1)}
-                                    className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                    className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
                                 >
                                     <ChevronRight size={16} />
                                 </button>
@@ -403,7 +410,7 @@ export default function PalletsEffects() {
                         <Plus size={16} /> CREATE EFFECT
                     </button>
                 </div>
-                <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-2xl">
+                <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950">
                     <table className="w-full text-center text-sm table-auto">
                         <thead className="bg-slate-700/50 text-slate-400 font-bold uppercase text-[13px] tracking-widest select-none">
                             <tr>
@@ -454,9 +461,16 @@ export default function PalletsEffects() {
                             <select 
                                 value={effectRowsPerPage} 
                                 onChange={e => { setEffectRowsPerPage(Number(e.target.value)); setEffectPage(1); }}
-                                className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer"
+                                className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer hover:bg-slate-800/40"
                             >
-                                {[5, 10, 25, 50].map(size => <option key={size} value={size}>{size}</option>)}
+                                {[5, 10, 25, 50].map(size =>
+                                <option
+                                    key={size}
+                                    value={size}
+                                    className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none"
+                                >
+                                    {size}
+                                </option>)}
                             </select>
                         </div>
                         <div className="flex items-center gap-4">
@@ -465,14 +479,14 @@ export default function PalletsEffects() {
                                 <button 
                                     disabled={effectPage === 1}
                                     onClick={() => setEffectPage(prev => prev - 1)}
-                                    className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                    className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
                                 >
                                     <ChevronLeft size={16} />
                                 </button>
                                 <button 
                                     disabled={effectPage === totalEffectPages}
                                     onClick={() => setEffectPage(prev => prev + 1)}
-                                    className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                    className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
                                 >
                                     <ChevronRight size={16} />
                                 </button>
