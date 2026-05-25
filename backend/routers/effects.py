@@ -2,12 +2,12 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from backend.database import engine, get_session
-from backend.models import WLEDEffects, EffectsCreate
+from backend.models import WLEDEffects, EffectsCreate, EffectsRead
 from backend.utils import manager
 
 router = APIRouter(prefix="/api/effects", tags=["effects"])
 
-@router.get("", response_model=List[EffectsCreate])
+@router.get("", response_model=List[EffectsRead])
 def get_effects(session: Session = Depends(get_session)):
     effects = session.exec(select(WLEDEffects)).all()
     return effects
@@ -15,21 +15,21 @@ def get_effects(session: Session = Depends(get_session)):
 @router.post("")
 async def add_effects(data: EffectsCreate):
     with Session(engine) as session:
-        eff = WLEDEffects(
+        efft = WLEDEffects(
             name=data.name,
             effect_id=data.effect_id
         )
 
-        session.add(eff)
+        session.add(efft)
         session.commit()
-        session.refresh(eff)
+        session.refresh(efft)
 
     await manager.broadcast({
         "type": "effect_created",
-        "data": eff.model_dump()
+        "data": efft.model_dump()
     })
 
-    return eff
+    return efft
 
 @router.put("/{eff_id}")
 async def edit_effects(eff_id: int, data: EffectsCreate):
@@ -56,11 +56,11 @@ async def edit_effects(eff_id: int, data: EffectsCreate):
 @router.delete("/{eff_id}")
 async def delete_effects(eff_id: int):
     with Session(engine) as session:
-        eff = session.get(WLEDEffects, eff_id)
-        if not eff:
+        efft = session.get(WLEDEffects, eff_id)
+        if not efft:
             raise HTTPException(status_code=404, detail="Effect not found")
 
-        session.delete(eff)
+        session.delete(efft)
         session.commit()
 
     await manager.broadcast({
