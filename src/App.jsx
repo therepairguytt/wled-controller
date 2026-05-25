@@ -65,8 +65,9 @@ export default function App() {
   const activeItem = menuItems.find(item => item.id === activeTab);
 
   return (
+
     <div className="flex h-screen bg-slate-950 text-white overflow-hidden font-sans">
-      
+
       {/* 1. Pass state to Header so it can shift right */}
       <Header isCollapsed={isCollapsed} />
       
