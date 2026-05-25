@@ -286,6 +286,10 @@ class PalettesRead(SQLModel):
     name: str
 
 class EffectsCreate(SQLModel):
+    effect_id: int
+    name: str
+
+class EffectsRead(SQLModel):
     id: int
     effect_id: int
     name: str
