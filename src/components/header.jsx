@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
 import { useAppConfig } from '../hooks/useAppConfig';
 
-export default function Header({ isCollapsed }) {
+export default function Header({ isCollapsed, systemStatus }) {
   const { config, loading } = useAppConfig();
-  const [isApiOnline, setIsApiOnline] = useState(true);
   const appHost = import.meta.env.VITE_APP_HOST;
   const appPort = parseInt(import.meta.env.VITE_APP_PORT);
   const apiHost = import.meta.env.VITE_API_HOST;
@@ -13,7 +11,6 @@ export default function Header({ isCollapsed }) {
 
   const appNavigation = (e) => {
     e.preventDefault();
-  
     const appWindow = window.open();
     if (appWindow) {
       appWindow.opener = null;
@@ -23,7 +20,6 @@ export default function Header({ isCollapsed }) {
   
   const apiNavigation = (e) => {
     e.preventDefault();
-  
     const apiWindow = window.open();
     if (apiWindow) {
       apiWindow.opener = null;
@@ -31,18 +27,12 @@ export default function Header({ isCollapsed }) {
     }
   };
 
-  useEffect(() => {
-    const handleStatusChange = (e) => {
-        setIsApiOnline(e.detail.online);
-    };
-
-    window.addEventListener('api-status', handleStatusChange);
-    return () => window.removeEventListener('api-status', handleStatusChange);
-  }, []);
+  const apiOnline = systemStatus?.api === 'up';
+  const dbOnline = systemStatus?.database === 'up';
 
   if (loading && !config) {
     return (
-      <header className="fixed top-0 left-0 right-0 h-14 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex items-center px-6 z-50">
+      <header className="fixed top-0 left-0 right-0 h-14 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex items-center px-6 z-50 font-mono text-[10px] tracking-[0.4em] text-slate-500 uppercase">
           CONNECTING TO BACKEND...
       </header>
     );
@@ -51,29 +41,47 @@ export default function Header({ isCollapsed }) {
   return (
     <header className={`
       fixed top-0 left-0 right-0 h-14 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 z-40
-      transition-all duration-300 flex items-center justify-between px-6
+      transition-all duration-600 flex items-center justify-between px-6
       ${isCollapsed ? 'lg:pl-20' : 'lg:pl-52'} 
     `}>
       <div className="flex items-center gap-4 px-8">
         
-        <h1 className="text-sm font-bold text-slate-100 uppercase">
+        <h1 className="text-sm font-bold text-slate-100 uppercase tracking-tight">
           {import.meta.env.VITE_APP_NAME || "WLED CONTROLLER"}
         </h1>
 
-        {/* THE DYNAMIC INDICATOR */}
-        <div className={`flex items-center gap-2 px-2 py-1 rounded-lg border transition-colors ${
-          isApiOnline ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-rose-500/10 border-rose-500/20'
-        }`}>
-          <div className={`h-1.5 w-1.5 rounded-full ${
-            isApiOnline 
-              ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' 
-              : 'bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse'
-          }`} />
-          <span className={`text-[9px] font-black uppercase tracking-tighter ${
-            isApiOnline ? 'text-emerald-500' : 'text-rose-500'
+        <div className="flex items-center gap-2">
+          
+          <div className={`flex items-baseline gap-1.5 px-2 py-0.5 rounded-md border transition-colors ${
+            apiOnline ? 'bg-emerald-500/5 border-emerald-500/10' : 'bg-rose-500/5 border-rose-500/10'
           }`}>
-            {isApiOnline ? 'System Online' : 'Unreachable'}
-          </span>
+            <div className={`h-1.5 w-1.5 rounded-full ${
+              apiOnline 
+                ? 'bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse' 
+                : 'bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse'
+            }`} />
+            <span className={`text-[11px] font-black uppercase tracking-wider font-mono ${
+              apiOnline ? 'text-emerald-500/80' : 'text-rose-500/80'
+            }`}>
+              API
+            </span>
+          </div>
+
+          <div className={`flex items-baseline gap-1.5 px-2 py-0.5 rounded-md border transition-colors ${
+            dbOnline ? 'bg-emerald-500/5 border-emerald-500/10' : 'bg-rose-500/5 border-rose-500/10'
+          }`}>
+            <div className={`h-1.5 w-1.5 rounded-full ${
+              dbOnline 
+                ? 'bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse' 
+                : 'bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse'
+            }`} />
+            <span className={`text-[11px] font-black uppercase tracking-wider font-mono ${
+              dbOnline ? 'text-emerald-500/80' : 'text-rose-500/80'
+            }`}>
+              DB
+            </span>
+          </div>
+
         </div>
       </div>
       
@@ -83,17 +91,17 @@ export default function Header({ isCollapsed }) {
           <a
             href={appAddress}
             onClick={appNavigation}
-            className="cursor-pointer hover:text-white hover:bg-indigo-800 hover:font-bold hover:underline hover:rounded transition-all"
-            >
-              <span className="text-slate-300">{appHost}:{appPort}</span>
-            </a>
+            className="cursor-pointer hover:text-white hover:bg-indigo-800 hover:font-bold hover:underline hover:rounded transition-all ml-1"
+          >
+            <span className="text-slate-300">{appHost}:{appPort}</span>
+          </a>
         </div>
         <div className="text-slate-500 uppercase hidden md:block">
           Backend: 
           <a 
             href={apiAddress}
             onClick={apiNavigation}
-            className="cursor-pointer hover:text-white hover:bg-indigo-800 hover:font-bold hover:underline hover:rounded transition-all"
+            className="cursor-pointer hover:text-white hover:bg-indigo-800 hover:font-bold hover:underline hover:rounded transition-all ml-1"
           >
             <span className="text-slate-300">{apiHost}:{apiPort}</span>
           </a>

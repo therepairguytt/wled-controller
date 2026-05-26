@@ -1,8 +1,10 @@
 import asyncio
+import websockets
 from sqlmodel import Session, select
 from backend.database import engine
 from backend.models import Broadcast, PlaylistItem, Preset, Controller, BroadcastSchedule, get_utc_now
-from backend.utils import active_broadcast_state, apply_preset_to_wled
+from backend.utils import active_broadcast_state, apply_preset_to_wled, manager
+from backend.logger import write_log
 
 async def playlist_runner():
     while True:
@@ -65,4 +67,53 @@ async def broadcast_scheduler():
         except Exception as e:
             print(f"Error in broadcast_scheduler: {e}")
             
+        await asyncio.sleep(30)
+
+async def controller_health_checker():
+    """Periodically pings every controller's WebSocket and updates is_online in the DB."""
+    while True:
+        try:
+            with Session(engine) as session:
+                controllers = session.exec(select(Controller)).all()
+
+                async def check_controller(ctrl):
+                    try:
+                        async with websockets.connect(
+                            f"ws://{ctrl.ip_address}/ws",
+                            open_timeout=3,
+                            close_timeout=2
+                        ):
+                            is_online = True
+                    except Exception:
+                        is_online = False
+
+                    if ctrl.is_online != is_online:
+                        with Session(engine) as inner_session:
+                            db_ctrl = inner_session.get(Controller, ctrl.id)
+                            if db_ctrl:
+                                db_ctrl.is_online = is_online
+                                inner_session.add(db_ctrl)
+                                inner_session.commit()
+
+                        write_log(
+                            message=f"Controller '{ctrl.name}' ({ctrl.ip_address}) is {'ONLINE' if is_online else 'OFFLINE'}.",
+                            category="controller",
+                            action="online" if is_online else "offline",
+                            level="SUCCESS" if is_online else "ERROR",
+                            target_id=ctrl.id,
+                            target_name=ctrl.name
+                        )
+                        await manager.broadcast({
+                            "type": "controller_status",
+                            "controller_id": ctrl.id,
+                            "is_online": is_online
+                        })
+                        print(f"[Health] {ctrl.name} ({ctrl.ip_address}) is {'ONLINE' if is_online else 'OFFLINE'}")
+
+                # Run all checks concurrently
+                await asyncio.gather(*[check_controller(c) for c in controllers])
+
+        except Exception as e:
+            print(f"Error in controller_health_checker: {e}")
+
         await asyncio.sleep(30)

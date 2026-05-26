@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import api from '../services/api'
-import { Edit3, Trash2, Plus, X, Server, Lightbulb } from 'lucide-react'
+import { Edit3, Trash2, Plus, X, Server, Lightbulb, Sun, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 
 export default function ControllerSegments() {
   const [controllers, setControllers] = useState([])
@@ -21,6 +21,53 @@ export default function ControllerSegments() {
     spacing: 0,
     seg_bri: 255
   })
+
+  const [segmentSort, setSegmentSort] = useState({ column: 'controller_name', direction: 'asc' });
+  const [segmentPage, setSegmentPage] = useState(1);
+  const [segmentRowsPerPage, setSegmentRowsPerPage] = useState(10);
+
+  const handleSegmentSortRequest = (column) => {
+      let direction = 'asc';
+      if (segmentSort.column === column && segmentSort.direction === 'asc') {
+          direction = 'desc';
+      }
+      setSegmentSort({ column, direction });
+      setSegmentPage(1);
+  };
+
+  const sortedSegments = useMemo(() => {
+      const sortableItems = [...segment];
+      if (segmentSort.column !== null) {
+          sortableItems.sort((a, b) => {
+              let aVal = segmentSort.column === 'controller_name' ? a.controller_name?.name : a[segmentSort.column];
+              let bVal = segmentSort.column === 'controller_name' ? b.controller_name?.name : b[segmentSort.column];
+
+              if (['segment_id', 'start_led', 'stop_led', 'seg_bri', 'offset', 'grouping', 'spacing'].includes(segmentSort.column)) {
+                  return segmentSort.direction === 'asc' ? aVal - bVal : bVal - aVal;
+              }
+
+              aVal = aVal?.toString().toLowerCase() || '';
+              bVal = bVal?.toString().toLowerCase() || '';
+              if (aVal < bVal) return segmentSort.direction === 'asc' ? -1 : 1;
+              if (aVal > bVal) return segmentSort.direction === 'asc' ? 1 : -1;
+              return 0;
+          });
+      }
+      return sortableItems;
+  }, [segment, segmentSort]);
+
+  const totalSegmentPages = Math.ceil(sortedSegments.length / segmentRowsPerPage) || 1;
+  const paginatedSegments = useMemo(() => {
+      const startIndex = (segmentPage - 1) * segmentRowsPerPage;
+      return sortedSegments.slice(startIndex, startIndex + segmentRowsPerPage);
+  }, [sortedSegments, segmentPage, segmentRowsPerPage]);
+
+  const SortIndicator = ({ currentSort, column }) => {
+      if (currentSort.column !== column) return <ArrowUpDown size={14} className="opacity-40 inline" />;
+      return currentSort.direction === 'asc' 
+          ? <ArrowUp size={14} className="text-indigo-400 inline" /> 
+          : <ArrowDown size={14} className="text-indigo-400 inline" />;
+  };
 
   useEffect(() => {
     const loadControllers = async () => {
@@ -50,6 +97,15 @@ export default function ControllerSegments() {
     return maxId + 1;
   }, [segment])
 
+  const getNextStartLed = useCallback((controllerId) => {
+    if (!controllerId) return 0;
+    const ctrlId = parseInt(controllerId, 10);
+    const controllerSegments = segment.filter(s => s.controller_id === ctrlId);
+    if (controllerSegments.length === 0) return 0;
+    const maxStartLed = Math.max(...controllerSegments.map(s => s.stop_led));
+    return maxStartLed;
+  }, [segment])
+
   const openModal = (segment = null) => {
     if (segment) {
       setEditingSegment(segment)
@@ -73,8 +129,8 @@ export default function ControllerSegments() {
         controller_id: defaultControllerId,
         name: '',
         segment_id: getNextSegmentId(defaultControllerId),
-        start_led: 0,
-        stop_led: 30,
+        start_led: getNextStartLed(defaultControllerId),
+        stop_led: getNextStartLed(defaultControllerId) + 30,
         reverse_direction: false,
         mirror_effect: false,
         offset: 0,
@@ -125,6 +181,9 @@ export default function ControllerSegments() {
       await api.delete(`/api/segments/${id}`);
       fetchSegment();
       setDeletingId(null);
+      if (paginatedSegments.length === 1 && segmentPage > 1) {
+          setSegmentPage(prev => prev - 1);
+      }
     } catch (err) {
       alert("Error deleting segment.")
     }
@@ -142,26 +201,48 @@ export default function ControllerSegments() {
         </button>
       </div>
 
-      <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-800/50 text-slate-400 font-bold uppercase text-[10px] tracking-widest">
-            <tr>
-              <th className="p-4 text-center">ID & Name</th>
-              <th className="p-4 text-center">Controller Name</th>
-              <th className="p-4 text-center">Start LED</th>
-              <th className="p-4 text-center">Stop LED</th>
-              <th className="p-4 text-center">Segment Brightness</th>
-              <th className="p-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800 text-center">
-            {segment.map(ctrl => (
+      <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950 shadow-xl">
+        <div className="overflow-x-auto">
+          <table className="w-full text-center text-sm table-auto min-w-max">
+            <thead className="bg-slate-800/80 text-slate-400 font-bold uppercase text-[13px] tracking-widest select-none">
+              <tr>
+                <th onClick={() => handleSegmentSortRequest('segment_id')} className="p-4 text-center cursor-pointer hover:text-white transition-colors">
+                  <div className="flex items-center justify-center gap-1">ID & Name<SortIndicator currentSort={segmentSort} column="segment_id" /></div>
+                </th>
+                <th onClick={() => handleSegmentSortRequest('controller_name')} className="p-4 text-center cursor-pointer hover:text-white transition-colors">
+                  <div className="flex items-center justify-center gap-1">Controller<SortIndicator currentSort={segmentSort} column="controller_name" /></div>
+                </th>
+                <th onClick={() => handleSegmentSortRequest('start_led')} className="p-4 text-center cursor-pointer hover:text-white transition-colors">
+                  <div className="flex items-center justify-center gap-1">Start LED<SortIndicator currentSort={segmentSort} column="start_led" /></div>
+                </th>
+                <th onClick={() => handleSegmentSortRequest('stop_led')} className="p-4 text-center cursor-pointer hover:text-white transition-colors">
+                  <div className="flex items-center justify-center gap-1">Stop LED<SortIndicator currentSort={segmentSort} column="stop_led" /></div>
+                </th>
+                <th onClick={() => handleSegmentSortRequest('seg_bri')} className="p-4 text-center cursor-pointer hover:text-white transition-colors">
+                  <div className="flex items-center justify-center gap-1">Brightness<SortIndicator currentSort={segmentSort} column="seg_bri" /></div>
+                </th>
+                <th onClick={() => handleSegmentSortRequest('offset')} className="p-4 text-center cursor-pointer hover:text-white transition-colors">
+                  <div className="flex items-center justify-center gap-1">Offset<SortIndicator currentSort={segmentSort} column="offset" /></div>
+                </th>
+                <th onClick={() => handleSegmentSortRequest('grouping')} className="p-4 text-center cursor-pointer hover:text-white transition-colors">
+                  <div className="flex items-center justify-center gap-1">Grouping<SortIndicator currentSort={segmentSort} column="grouping" /></div>
+                </th>
+                <th onClick={() => handleSegmentSortRequest('spacing')} className="p-4 text-center cursor-pointer hover:text-white transition-colors">
+                  <div className="flex items-center justify-center gap-1">Spacing<SortIndicator currentSort={segmentSort} column="spacing" /></div>
+                </th>
+                <th className="p-4 text-center">Reverse</th>
+                <th className="p-4 text-center">Mirror</th>
+                <th className="p-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800 text-center text-[14px]">
+              {paginatedSegments.map(ctrl => (
               <tr key={ctrl.id} className="hover:bg-slate-800/30 transition-colors group">
                 <td className="p-4">
                   <div className="font-bold text-slate-200">Seg#{ctrl.segment_id}</div>
                   <div className="text-[10px] text-slate-500 uppercase">{ctrl.name}</div>
                 </td>
-                <td className="font-bold text-slate-200">{ctrl.controller_name?.name || "Error Getting Data..."}</td>
+                <td className="font-bold text-slate-200">{ctrl.controller_name?.name}</td>
                 <td className="p-4 text-center">
                   <span className="font-bold text-slate-200">{ctrl.start_led}</span>
                 </td>
@@ -169,7 +250,39 @@ export default function ControllerSegments() {
                   <span className="text-xs font-mono text-slate-300">{ctrl.stop_led}</span>
                 </td>
                 <td className="p-4 text-center">
-                  <span className="font-bold text-slate-200">{ctrl.seg_bri}</span>
+                  <div className="flex items-center justify-center gap-2 text-slate-400 font-mono text-xs">
+                    <Sun size={14} className="text-amber-500" />
+                    {Math.round((ctrl.seg_bri / 255) * 100)}%
+                  </div>
+                </td>
+                <td className="p-4 text-center">
+                  <span className="text-xs font-mono text-slate-300">{ctrl.offset}</span>
+                </td>
+                <td className="p-4 text-center">
+                  <span className="text-xs font-mono text-slate-300">{ctrl.grouping}</span>
+                </td>
+                <td className="p-4 text-center">
+                  <span className="text-xs font-mono text-slate-300">{ctrl.spacing}</span>
+                </td>
+                <td className="p-4 text-center">
+                  <input
+                    type="checkbox"
+                    value={ctrl.reverse_direction}
+                    checked={ctrl.reverse_direction}
+                    readOnly
+                    onClick={(e) => e.preventDefault()}
+                    className="w-5 h-5 rounded border-slate-700 bg-slate-900 text-emerald-600 focus:ring-0 pointer-events-none"
+                  />
+                </td>
+                <td className="p-4 text-center">
+                  <input
+                    type="checkbox"
+                    value={ctrl.mirror_effect}
+                    checked={ctrl.mirror_effect}
+                    readOnly
+                    onClick={(e) => e.preventDefault()}
+                    className="w-5 h-5 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0 pointer-events-none"
+                  />
                 </td>
                 <td className="p-4 text-right">
                   <div className="flex justify-end gap-2">
@@ -186,8 +299,49 @@ export default function ControllerSegments() {
                 </td>
               </tr>
             ))}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
+
+        {/* PAGINATION FOOTER */}
+        <div className="bg-slate-900/50 border-t border-slate-800 px-4 py-3 flex items-center justify-between flex-wrap gap-3 text-xs font-bold text-slate-400">
+            <div className="flex items-center gap-2">
+                <span>Rows per page:</span>
+                <select 
+                    value={segmentRowsPerPage} 
+                    onChange={e => { setSegmentRowsPerPage(Number(e.target.value)); setSegmentPage(1); }}
+                    className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer hover:bg-slate-800/40"
+                >
+                    {[5, 10, 25, 50].map(size => 
+                    <option
+                        key={size}
+                        value={size}
+                        className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer"
+                    >
+                        {size}
+                    </option>)}
+                </select>
+            </div>
+            <div className="flex items-center gap-4">
+                <span>Page {segmentPage} of {totalSegmentPages}</span>
+                <div className="flex gap-1">
+                    <button 
+                        disabled={segmentPage === 1}
+                        onClick={() => setSegmentPage(prev => prev - 1)}
+                        className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
+                    >
+                        <ChevronLeft size={16} />
+                    </button>
+                    <button 
+                        disabled={segmentPage === totalSegmentPages}
+                        onClick={() => setSegmentPage(prev => prev + 1)}
+                        className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
+                    >
+                        <ChevronRight size={16} />
+                    </button>
+                </div>
+            </div>
+        </div>
       </div>
 
       {/* Add & Update Segments Form */}
@@ -195,7 +349,7 @@ export default function ControllerSegments() {
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
 
-          <form onSubmit={handleSave} className="relative bg-slate-900 border border-slate-800 w-full max-w-lg rounded-3xl shadow-3xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <form onSubmit={handleSave} className="relative bg-slate-900/80 backdrop-blur-md border border-slate-800/60 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-800/30">
               <h2 className="text-lg font-bold text-white uppercase tracking-tight">
                 {editingSegment ? 'Edit Segment' : 'New Segment'}
@@ -210,6 +364,7 @@ export default function ControllerSegments() {
                   required
                   placeholder='0'
                   type="number"
+                  title="Segment ID must be unique per controller. The next available ID will be auto-filled when you select a controller."
                   value={formData.segment_id}
                   onChange={e => setFormData({ ...formData, segment_id: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none transition-all"
@@ -222,6 +377,7 @@ export default function ControllerSegments() {
                   required
                   placeholder='1'
                   type="number"
+                  title="Start LED is the index of the first LED in this segment."
                   value={formData.start_led}
                   onChange={e => setFormData({ ...formData, start_led: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none"
@@ -234,6 +390,7 @@ export default function ControllerSegments() {
                   required
                   placeholder='30'
                   type="number"
+                  title="Stop LED is the index of the last LED in this segment."
                   value={formData.stop_led}
                   onChange={e => setFormData({ ...formData, stop_led: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none"
@@ -245,6 +402,7 @@ export default function ControllerSegments() {
                 <input
                   placeholder='Wave 1'
                   type="text"
+                  title="Segment Name is a user-defined label for this segment to identify it."
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none"
@@ -255,12 +413,15 @@ export default function ControllerSegments() {
                 <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Controller</label>
                 <select
                   value={formData.controller_id}
+                  title="Select the WLED controller this segment belongs to."
                   onChange={e => {
                     const newControllerId = e.target.value;
                     setFormData({
                       ...formData,
                       controller_id: newControllerId,
-                      segment_id: getNextSegmentId(newControllerId)
+                      segment_id: getNextSegmentId(newControllerId),
+                      start_led: getNextStartLed(newControllerId),
+                      stop_led: getNextStartLed(newControllerId) + 30
                     })
                   }}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none"
@@ -283,6 +444,7 @@ export default function ControllerSegments() {
                   required
                   placeholder='0'
                   type="number"
+                  title="Offset is the number of LEDs to skip before starting this segment."
                   value={formData.offset}
                   onChange={e => setFormData({ ...formData, offset: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none"
@@ -295,6 +457,7 @@ export default function ControllerSegments() {
                   required
                   placeholder='1'
                   type="number"
+                  title="Grouping is the number of LEDs to group together."
                   value={formData.grouping}
                   onChange={e => setFormData({ ...formData, grouping: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none"
@@ -307,6 +470,7 @@ export default function ControllerSegments() {
                   required
                   placeholder='0'
                   type="number"
+                  title="Spacing is the number of LEDs to skip between each group."
                   value={formData.spacing}
                   onChange={e => setFormData({ ...formData, spacing: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none"
@@ -322,6 +486,7 @@ export default function ControllerSegments() {
                   type="range"
                   min="0"
                   max="255"
+                  title="Segment Brightness is the intensity level for this segment."
                   value={formData.seg_bri}
                   onChange={e => setFormData({ ...formData, seg_bri: parseInt(e.target.value) })}
                   className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
@@ -331,6 +496,7 @@ export default function ControllerSegments() {
               <div className="flex items-center gap-3 bg-slate-950/50 p-3 rounded-xl border border-slate-800">
                 <input
                   type="checkbox"
+                  title="Mirror Effect duplicates the segment's effect on the opposite side."
                   checked={formData.mirror_effect}
                   onChange={e => setFormData({ ...formData, mirror_effect: e.target.checked })}
                   className="w-5 h-5 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0"
@@ -341,6 +507,7 @@ export default function ControllerSegments() {
               <div className="flex items-center gap-3 bg-slate-950/50 p-3 rounded-xl border border-slate-800">
                 <input
                   type="checkbox"
+                  title="Reverse Direction reverses the order of LEDs in this segment."
                   checked={formData.reverse_direction}
                   onChange={e => setFormData({ ...formData, reverse_direction: e.target.checked })}
                   className="w-5 h-5 rounded border-slate-700 bg-slate-900 text-emerald-600 focus:ring-0"
@@ -362,7 +529,7 @@ export default function ControllerSegments() {
       {deletingId && (
         <div className="fixed inset-0 z-110 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md" onClick={() => setDeletingId(null)} />
-          <div className="relative bg-slate-900 border border-rose-500/20 w-full max-w-sm rounded-3xl p-8 shadow-2xl text-center">
+          <div className="relative bg-slate-900/80 backdrop-blur-md border border-rose-500/20 w-full max-w-sm rounded-3xl p-8 shadow-2xl text-center">
             <div className="bg-rose-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
               <Trash2 className="text-rose-500" size={32} />
             </div>

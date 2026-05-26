@@ -85,6 +85,7 @@ class Playlist(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
     repeat_forever: bool = True
+    items: list["PlaylistItem"] = Relationship(back_populates="playlist", cascade_delete=True)
     created_on: datetime = Field(default_factory=get_utc_now, nullable=False)
     modified_on: datetime = Field(
         default_factory=get_utc_now,
@@ -99,6 +100,10 @@ class PlaylistItem(SQLModel, table=True):
     preset_id: int = Field(foreign_key="preset.id")
     sort_order: int
     duration_seconds: int = 10
+    
+    playlist: Optional["Playlist"] = Relationship(back_populates="items")
+    preset: Optional["Preset"] = Relationship()
+
     created_on: datetime = Field(default_factory=get_utc_now, nullable=False)
     modified_on: datetime = Field(
         default_factory=get_utc_now,
@@ -172,7 +177,6 @@ class ControllerCreate(BaseModel):
     group_id: int
     main_brightness: int
     is_active: bool
-    is_online: bool
     led_on: bool
 
 class ControllerSegmentCreate(BaseModel):
@@ -194,7 +198,7 @@ class PresetCreate(BaseModel):
     effect_id: int
     effect_speed: int
     effect_intensity: int
-    palettes_id: int
+    palette_id: int
     color1: str
     color2: str
     color3: str
@@ -204,7 +208,6 @@ class PlaylistCreate(BaseModel):
     repeat_forever: bool
 
 class PlaylistItemCreate(BaseModel):
-    playlist_id: int
     preset_id: int
     sort_order: int
     duration_seconds: int
@@ -264,7 +267,7 @@ class ControllerRead(SQLModel):
 class ControllerSegmentReadWithName(SQLModel):
     id: int
     name: str
-    controller_id: int
+    controller_id: Optional[int] = None
     controller_name: ControllerRead | None = None
     segment_id: int
     start_led: int
@@ -293,3 +296,51 @@ class EffectsRead(SQLModel):
     id: int
     effect_id: int
     name: str
+
+class SystemLog(SQLModel, table=True):
+    __table_args__ = {"extend_existing": True}
+    id: Optional[int] = Field(default=None, primary_key=True)
+    level: str = Field(default="INFO")          # INFO | WARN | ERROR | SUCCESS
+    category: str                                # controller | group | segment | power | system
+    action: str                                  # created | updated | deleted | online | offline | toggled | rebooted
+    message: str
+    target_id: Optional[int] = Field(default=None)   # id of the affected entity
+    target_name: Optional[str] = Field(default=None) # human-readable name
+    created_on: datetime = Field(default_factory=get_utc_now, nullable=False)
+
+class LogRead(SQLModel):
+    id: int
+    level: str
+    category: str
+    action: str
+    message: str
+    target_id: Optional[int] = None
+    target_name: Optional[str] = None
+    created_on: datetime
+
+class PresetRead(SQLModel):
+    id: int
+    name: str
+    is_on: bool
+    transition: int
+    effect_id: int
+    effect_speed: int
+    effect_intensity: int
+    palette_id: int
+    color1: str
+    color2: str
+    color3: str
+
+class PlaylistItemReadWithPreset(SQLModel):
+    id: int
+    playlist_id: int
+    preset_id: int
+    sort_order: int
+    duration_seconds: int
+    preset: Optional[PresetRead] = None
+
+class PlaylistReadWithItems(SQLModel):
+    id: int
+    name: str
+    repeat_forever: bool
+    items: List[PlaylistItemReadWithPreset] = []

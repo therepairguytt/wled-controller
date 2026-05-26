@@ -38,13 +38,26 @@ export default function Dashboard() {
             if (!prev) return prev;
             return {
               ...prev,
-              controllers: prev.controllers.map(c => 
+              controllers: prev.controllers.map(c =>
                 c.id === message.controller_id ? { ...c, led_on: message.on } : c
               )
             };
           });
+        } else if (message.type === 'controller_status') {
+          setDashboard(prev => {
+            if (!prev) return prev;
+            const updated = prev.controllers.map(c =>
+              c.id === message.controller_id ? { ...c, is_online: message.is_online } : c
+            );
+            return {
+              ...prev,
+              controllers: updated,
+              online: updated.filter(c => c.is_online).length,
+              offline: updated.filter(c => !c.is_online).length,
+            };
+          });
         } else if (['controller_updated', 'controller_created', 'controller_deleted'].includes(message.type)) {
-          load(); 
+          load();
         }
       };
 
@@ -70,7 +83,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     load()
-    const interval = setInterval(load, 60000) 
+    const interval = setInterval(load, 60000)
     return () => clearInterval(interval)
   }, [load])
 
@@ -95,8 +108,8 @@ export default function Dashboard() {
   return (
     <div className="space-y-8 w-full animate-in fade-in duration-500">
       {!dashboard ? (
-        <div className="bg-rose-500/10 border border-rose-500/20 p-12 rounded-3xl text-center">
-          <GlobeOff className="mx-auto text-rose-500 mb-4" size={40} />
+        <div className="bg-slate-900/60 backdrop-blur-xl border border-rose-500/20 shadow-xl p-12 rounded-3xl text-center">
+          <GlobeOff className="mx-auto text-rose-500 mb-4 animate-bounce" size={40} />
           <h3 className="text-rose-500 font-black uppercase tracking-widest text-sm">System Offline</h3>
         </div>
       ) : (
@@ -113,7 +126,7 @@ export default function Dashboard() {
             <button onClick={load} className="text-[10px] font-black text-indigo-500 hover:text-indigo-400">REFRESH</button>
           </div>
 
-          <div className="bg-slate-900/50 rounded-3xl border border-slate-800/60 overflow-hidden backdrop-blur-md shadow-2xl">
+          <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl border border-slate-800/60 overflow-hidden shadow-xl">
             <table className="w-full text-sm text-left">
               <thead className="bg-slate-800/30 text-slate-500 uppercase text-[9px] font-black tracking-[0.2em]">
                 <tr className="text-center">
@@ -124,41 +137,51 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/40">
-                {dashboard.controllers.map(ctrl => (
-                  <tr key={ctrl.id} className="hover:bg-white/1 transition-colors group text-center">
-                    <td className="p-5">
-                      <div className="font-bold text-slate-100">{ctrl.name}</div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold uppercase mt-1">
-                        <MapPin size={10} /> {ctrl.location || 'Unknown'}
-                      </div>
-                    </td>
-                    <td className="p-5 text-center">
-                      <span className="px-2 py-1 bg-slate-800/50 rounded text-[10px] font-bold text-indigo-400 border border-slate-700/50 uppercase">
-                        {ctrl.group?.group_name || "No Group"}
-                      </span>
-                    </td>
-                    <td className="p-5 text-center">
-                      <div className="flex items-center justify-center gap-2 text-slate-400 font-mono text-xs">
-                        <Sun size={14} className={ctrl.led_on ? "text-amber-500" : "text-slate-700"} />
-                        {Math.round((ctrl.main_brightness / 255) * 100)}%
-                      </div>
-                    </td>
-                    <td className="p-5 text-right">
-                      <button
-                        onClick={() => togglePower(ctrl)}
-                        disabled={!ctrl.is_online}
-                        className={`p-3 rounded-2xl transition-all ${
-                          !ctrl.is_online ? 'opacity-20 cursor-not-allowed bg-slate-800' : 
-                          ctrl.led_on 
-                            ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]' 
-                            : 'bg-slate-800 text-slate-500'
-                        }`}
-                      >
-                        <Power size={18} strokeWidth={3} />
-                      </button>
+                {dashboard.controllers.length > 0 ? (
+                  dashboard.controllers.map(ctrl => (
+                    <tr key={ctrl.id} className="hover:bg-white/1 transition-colors group text-center">
+                      <td className="p-5">
+                        <div className="font-bold text-slate-100">{ctrl.name}</div>
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold uppercase mt-1">
+                          <MapPin size={10} /> {ctrl.location || 'Unknown'}
+                        </div>
+                      </td>
+                      <td className="p-5 text-center">
+                        <span className="px-2 py-1 bg-slate-800/50 rounded text-[10px] font-bold text-indigo-400 border border-slate-700/50 uppercase">
+                          {ctrl.group?.group_name || "No Group"}
+                        </span>
+                      </td>
+                      <td className="p-5 text-center">
+                        <div className="flex items-center justify-center gap-2 text-slate-400 font-mono text-xs">
+                          <Sun size={14} className={ctrl.led_on ? "text-amber-500" : "text-slate-700"} />
+                          {Math.round((ctrl.main_brightness / 255) * 100)}%
+                        </div>
+                      </td>
+                      <td className="p-5 text-right">
+                        <button
+                          onClick={() => togglePower(ctrl)}
+                          disabled={!ctrl.is_online}
+                          className={`p-3 rounded-2xl transition-all ${!ctrl.is_online ? 'opacity-20 cursor-not-allowed bg-slate-800' :
+                              ctrl.led_on
+                                ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+                                : 'bg-slate-800 text-slate-500'
+                            }`}
+                        >
+                          <Power size={18} strokeWidth={3} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan="4"
+                      className="p-8 text-center text-slate-400 italic text-m bg-slate-600/10 justify-items-center"
+                    >
+                      No controllers found.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -170,7 +193,7 @@ export default function Dashboard() {
 
 function Tile({ label, value, color = "text-white", icon }) {
   return (
-    <div className="bg-slate-900/60 rounded-3xl p-6 border border-slate-800/50">
+    <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl p-6 border border-slate-800/60 shadow-lg">
       <div className="flex justify-between items-start mb-4">
         <span className="text-slate-500 text-[9px] font-black uppercase">{label}</span>
         <span className="text-slate-700">{icon}</span>

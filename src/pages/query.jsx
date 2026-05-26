@@ -16,7 +16,7 @@ export default function Query() {
   return (
     <div className="space-y-6">
 
-      <h1 className="text-3xl font-bold">
+      <h1 className="text-2xl font-black text-slate-100 uppercase tracking-tight">
         Query Controller
       </h1>
 
@@ -26,12 +26,12 @@ export default function Query() {
           value={ip}
           onChange={(e) => setIp(e.target.value)}
           placeholder="192.168.1.100"
-          className="bg-slate-900 border border-slate-700 rounded-xl p-3 w-full"
+          className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-200 focus:border-indigo-500 outline-none transition-all"
         />
 
         <button
           onClick={search}
-          className="bg-indigo-600 px-6 rounded-xl"
+          className="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-indigo-500/20 uppercase tracking-wider"
         >
           Search
         </button>
@@ -40,7 +40,7 @@ export default function Query() {
 
       {result && (
 
-        <pre className="bg-slate-900 p-6 rounded-2xl overflow-auto">
+        <pre className="bg-slate-900/60 backdrop-blur-xl border border-slate-800/60 p-6 rounded-2xl shadow-xl overflow-auto text-slate-300 text-xs font-mono">
           {JSON.stringify(result, null, 2)}
         </pre>
 

@@ -243,7 +243,7 @@ export default function PalletsEffects() {
             </div>
 
             {/* Pallet Management Section */}
-            <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-xl">
+            <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800/60 p-6 shadow-xl">
                 <div className="flex justify-between pb-4 items-baseline">
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Palette Management</h3>
                     <button
@@ -342,7 +342,7 @@ export default function PalletsEffects() {
                 {isPalettesModalOpen && (
                     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
                         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setIsPalettesModalOpen(false)} />
-                        <form onSubmit={palettesSave} className="relative bg-slate-900 border border-slate-800 w-full max-w-lg rounded-3xl shadow-3xl overflow-hidden animate-in zoom-in-95 duration-200">
+                        <form onSubmit={palettesSave} className="relative bg-slate-900/80 backdrop-blur-md border border-slate-800/60 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                             <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-800/30">
                                 <h2 className="text-lg font-bold text-white uppercase tracking-tight">
                                     {editingPalettes ? 'Edit Palette' : 'Create Palette'}
@@ -400,7 +400,7 @@ export default function PalletsEffects() {
             </div>
 
             {/* Effects Management Section */}
-            <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-xl">
+            <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800/60 p-6 shadow-xl">
                 <div className="flex justify-between pb-4 items-baseline">
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Effects Management</h3>
                     <button
@@ -499,7 +499,7 @@ export default function PalletsEffects() {
                 {isEffectsModalOpen && (
                     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
                         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setIsEffectsModalOpen(false)} />
-                        <form onSubmit={effectsSave} className="relative bg-slate-900 border border-slate-800 w-full max-w-lg rounded-3xl shadow-3xl overflow-hidden animate-in zoom-in-95 duration-200">
+                        <form onSubmit={effectsSave} className="relative bg-slate-900/80 backdrop-blur-md border border-slate-800/60 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                             <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-800/30">
                                 <h2 className="text-lg font-bold text-white uppercase tracking-tight">
                                     {editingEffects ? 'Edit Effect' : 'Create Effect'}

@@ -1,4 +1,5 @@
-import httpx
+import websockets
+import json
 from fastapi import WebSocket
 from typing import List, Dict
 
@@ -23,7 +24,6 @@ class ConnectionManager:
                 continue
 
 manager = ConnectionManager()
-client = httpx.AsyncClient(timeout=3.0)
 active_broadcast_state: Dict[int, dict] = {}
 
 def hex_to_rgb(hex_str: str) -> List[int]:
@@ -41,6 +41,7 @@ async def apply_preset_to_wled(controller, preset):
         }]
     }
     try:
-        await client.post(f"http://{controller.ip_address}/json/state", json=payload)
+        async with websockets.connect(f"ws://{controller.ip_address}/ws") as ws:
+            await ws.send(json.dumps(payload))
     except Exception as e:
         print(f"Failed to update {controller.name}: {e}")

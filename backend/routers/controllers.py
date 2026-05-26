@@ -4,7 +4,8 @@ from sqlmodel import Session, select
 from sqlalchemy.orm import joinedload
 from backend.database import engine, get_session
 from backend.models import Controller, ControllerReadWithGroup, ControllerCreate, PowerPayload
-from backend.utils import manager, client
+from backend.utils import manager
+from backend.logger import write_log
 
 router = APIRouter(prefix="/api/controllers", tags=["controllers"])
 
@@ -14,7 +15,7 @@ def get_controllers(session: Session = Depends(get_session)):
     result = session.exec(statement).all()
 
     if not result:
-        raise HTTPException(status_code=404, detail="No controllers found!")
+        raise HTTPException(status_code=204, detail="No controllers found!")
     
     return result
 
@@ -32,10 +33,12 @@ async def add_controller(data: ControllerCreate):
         session.commit()
         session.refresh(ctrl)
 
-    await manager.broadcast({
-        "type": "controller_created",
-        "data": ctrl.model_dump()
-    })
+    write_log(
+        message=f"Controller '{ctrl.name}' ({ctrl.ip_address}) was created.",
+        category="controller", action="created", level="SUCCESS",
+        target_id=ctrl.id, target_name=ctrl.name
+    )
+    await manager.broadcast({"type": "controller_created", "data": ctrl.model_dump()})
     return ctrl
 
 @router.put("/{ctrl_id}")
@@ -53,10 +56,12 @@ async def edit_controller(ctrl_id: int, data: ControllerCreate):
         session.commit()
         session.refresh(db_ctrl)
 
-    await manager.broadcast({
-        "type": "controller_updated",
-        "data": db_ctrl.model_dump()
-    })
+    write_log(
+        message=f"Controller '{db_ctrl.name}' ({db_ctrl.ip_address}) was updated.",
+        category="controller", action="updated", level="INFO",
+        target_id=db_ctrl.id, target_name=db_ctrl.name
+    )
+    await manager.broadcast({"type": "controller_updated", "data": db_ctrl.model_dump()})
     return db_ctrl
 
 @router.delete("/{ctrl_id}")
@@ -66,11 +71,15 @@ async def delete_controller(ctrl_id: int):
         if not ctrl:
             raise HTTPException(status_code=404, detail="Controller not found")
 
+        ctrl_name = ctrl.name
+        ctrl_ip = ctrl.ip_address
         session.delete(ctrl)
         session.commit()
 
-    await manager.broadcast({
-        "type": "controller_deleted",
-        "ctrl_id": ctrl_id
-    })
+    write_log(
+        message=f"Controller '{ctrl_name}' ({ctrl_ip}) was deleted.",
+        category="controller", action="deleted", level="WARN",
+        target_id=ctrl_id, target_name=ctrl_name
+    )
+    await manager.broadcast({"type": "controller_deleted", "ctrl_id": ctrl_id})
     return {"status": "deleted"}

@@ -149,7 +149,7 @@ export default function Settings() {
       </div>
 
       {/* Power Options Section */}
-      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-xl">
+      <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800/60 p-6 shadow-xl">
         <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Power & Maintenance</h3>
         <div className="flex flex-col md:flex-row items-end gap-4">
           <div className="flex-1 w-full">
@@ -189,7 +189,7 @@ export default function Settings() {
       </div>
 
       {/* Group Management Section */}
-      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-xl">
+      <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800/60 p-6 shadow-xl">
         <div className="flex justify-between items-baseline pb-4">
           <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Group Management</h3>
           <button
@@ -281,7 +281,7 @@ export default function Settings() {
           {isGroupsModalOpen && (
             <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
               <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setIsGroupsModalOpen(false)} />
-              <form onSubmit={groupsSave} className="relative bg-slate-900 border border-slate-800 w-full max-w-lg rounded-3xl shadow-3xl overflow-hidden animate-in zoom-in-95 duration-200">
+              <form onSubmit={groupsSave} className="relative bg-slate-900/80 backdrop-blur-md border border-slate-800/60 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                 <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-800/30">
                   <h2 className="text-lg font-bold text-white uppercase tracking-tight">
                     {editingGroups ? 'Edit Group' : 'Create Group'}
@@ -312,7 +312,7 @@ export default function Settings() {
           {groupsDeletingID && (
             <div className="fixed inset-0 z-110 flex items-center justify-center p-4">
               <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md" onClick={() => setGroupsDeletingID(null)} />
-              <div className="relative bg-slate-900 border border-rose-500/20 w-full max-w-sm rounded-3xl p-8 shadow-2xl text-center">
+              <div className="relative bg-slate-900/80 backdrop-blur-md border border-rose-500/20 w-full max-w-sm rounded-3xl p-8 shadow-2xl text-center">
                 <div className="bg-rose-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Trash2 className="text-rose-500" size={32} />
                 </div>

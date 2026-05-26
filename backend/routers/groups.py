@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from backend.database import engine, get_session
 from backend.models import Groups, GroupsCreate, GroupRead
 from backend.utils import manager
+from backend.logger import write_log
 
 router = APIRouter(prefix="/api/groups", tags=["groups"])
 
@@ -22,6 +23,11 @@ def create_group(group_data: GroupsCreate, session: Session = Depends(get_sessio
         session.add(new_group)
         session.commit()
         session.refresh(new_group)
+        write_log(
+            message=f"Group '{new_group.group_name}' was created.",
+            category="group", action="created", level="SUCCESS",
+            target_id=new_group.id, target_name=new_group.group_name
+        )
         return new_group
     except IntegrityError as e:
         session.rollback()
@@ -51,11 +57,12 @@ async def edit_groups(group_id: int, data: GroupRead):
         session.commit()
         session.refresh(edit_group)
 
-    await manager.broadcast({
-        "type": "group_updated",
-        "data": edit_group.model_dump()
-    })
-
+    write_log(
+        message=f"Group '{edit_group.group_name}' was updated.",
+        category="group", action="updated", level="INFO",
+        target_id=edit_group.id, target_name=edit_group.group_name
+    )
+    await manager.broadcast({"type": "group_updated", "data": edit_group.model_dump()})
     return edit_group
 
 @router.delete("/{group_id}", status_code=status.HTTP_200_OK)
@@ -68,13 +75,20 @@ def delete_group(group_id: int, session: Session = Depends(get_session)):
         )
     
     try:
+        group_name = group.group_name
+        group_id_val = group.id
         session.delete(group)
         session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot delete group: There are still controllers assigned to it."
         )
-        
+
+    write_log(
+        message=f"Group '{group_name}' was deleted.",
+        category="group", action="deleted", level="WARN",
+        target_id=group_id_val, target_name=group_name
+    )
     return {"status": "deleted"}

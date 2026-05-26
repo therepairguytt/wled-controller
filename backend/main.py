@@ -12,10 +12,10 @@ from sqlmodel import SQLModel, Session, select
 from backend.database import engine
 from backend.models import WLEDEffects, WLEDPalettes
 from backend.wled_seed_data import WLED_EFFECTS, WLED_PALETTES
-from backend.utils import manager, client
-from backend.tasks import playlist_runner, broadcast_scheduler
+from backend.utils import manager
+from backend.tasks import playlist_runner, broadcast_scheduler, controller_health_checker
 
-from backend.routers import controllers, groups, broadcasts, dashboard, segments, palettes, effects, functions
+from backend.routers import controllers, groups, broadcasts, dashboard, segments, palettes, effects, functions, health, system, logs, presets, playlists
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -32,10 +32,11 @@ async def lifespan(app: FastAPI):
 
     p_task = asyncio.create_task(playlist_runner())
     s_task = asyncio.create_task(broadcast_scheduler())
+    h_task = asyncio.create_task(controller_health_checker())
     yield
     p_task.cancel()
     s_task.cancel()
-    await client.aclose()
+    h_task.cancel()
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
@@ -63,6 +64,11 @@ app.include_router(functions.router)
 app.include_router(segments.router)
 app.include_router(palettes.router)
 app.include_router(effects.router)
+app.include_router(health.router)
+app.include_router(system.router)
+app.include_router(logs.router)
+app.include_router(presets.router)
+app.include_router(playlists.router)
 
 VITE_API_HOST = os.getenv("VITE_API_HOST", "127.0.0.1")
 VITE_API_PORT = int(os.getenv("VITE_API_PORT", 8000))

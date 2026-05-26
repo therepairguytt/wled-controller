@@ -1,9 +1,12 @@
 import os
+import websockets
+import json
 from fastapi import APIRouter, HTTPException
 from sqlmodel import Session, select
 from backend.database import engine
 from backend.models import Controller, PowerPayload, AppConfig
-from backend.utils import manager, client
+from backend.utils import manager
+from backend.logger import write_log
 
 router = APIRouter(prefix="/api", tags=["functions"])
 
@@ -16,10 +19,8 @@ async def toggle_controller(ctrl_id: int, payload: PowerPayload):
             raise HTTPException(status_code=404)
 
         try:
-            await client.post(
-                f"http://{ctrl.ip_address}/json/state",
-                json={"on": payload.on}
-            )
+            async with websockets.connect(f"ws://{ctrl.ip_address}/ws") as ws:
+                await ws.send(json.dumps({"on": payload.on}))
         except Exception as e:
             print(f"Failed to toggle {ctrl.name}: {e}")
 
@@ -27,11 +28,12 @@ async def toggle_controller(ctrl_id: int, payload: PowerPayload):
         session.add(ctrl)
         session.commit()
 
-    await manager.broadcast({
-        "type": "power_toggle",
-        "controller_id": ctrl_id,
-        "on": payload.on
-    })
+    write_log(
+        message=f"Controller '{ctrl.name}' ({ctrl.ip_address}) power {'ON' if payload.on else 'OFF'}.",
+        category="power", action="toggled", level="INFO",
+        target_id=ctrl_id, target_name=ctrl.name
+    )
+    await manager.broadcast({"type": "power_toggle", "controller_id": ctrl_id, "on": payload.on})
     return {"status": "success"}
 
 # Reboot endpoint for rebooting one controller
@@ -43,27 +45,27 @@ async def reboot_controller(ctrl_id: int):
             raise HTTPException(status_code=404)
 
         try:
-            await client.post(
-                f"http://{ctrl.ip_address}/json/state",
-                json={"rb": True}
-            )
+            async with websockets.connect(f"ws://{ctrl.ip_address}/ws") as ws:
+                await ws.send(json.dumps({"rb": True}))
         except Exception as e:
             print(f"Failed to reboot {ctrl.name}: {e}")
 
-    await manager.broadcast({
-        "type": "controller_reboot",
-        "controller_id": ctrl_id
-    })
+    write_log(
+        message=f"Controller '{ctrl.name}' ({ctrl.ip_address}) was rebooted.",
+        category="power", action="rebooted", level="WARN",
+        target_id=ctrl_id, target_name=ctrl.name
+    )
+    await manager.broadcast({"type": "controller_reboot", "controller_id": ctrl_id})
     return {"status": "rebooted"}
 
 # Query controllers based on IP and return JSON
 @router.get("/query/{ip}")
 async def query_controller(ip: str):
     try:
-        response = await client.get(
-            f"http://{ip}/json/info"
-        )
-        return response.json()
+        async with websockets.connect(f"ws://{ip}/ws") as ws:
+            await ws.send(json.dumps({"v": True}))
+            response = await ws.recv()
+            return json.loads(response)
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -89,14 +91,14 @@ async def reboot_all():
         controllers = session.exec(select(Controller)).all()
         for ctrl in controllers:
             try:
-                await client.post(
-                    f"http://{ctrl.ip_address}/json/state",
-                    json={"rb": True}
-                )
+                async with websockets.connect(f"ws://{ctrl.ip_address}/ws") as ws:
+                    await ws.send(json.dumps({"rb": True}))
             except Exception as e:
                 print(f"Failed to reboot {ctrl.ip_address}: {e}")
 
-    await manager.broadcast({
-        "type": "reboot_all"
-    })
+    write_log(
+        message="All controllers were rebooted.",
+        category="power", action="rebooted", level="WARN"
+    )
+    await manager.broadcast({"type": "reboot_all"})
     return {"status": "success"}
