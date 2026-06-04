@@ -74,14 +74,68 @@ read -rp "Proceed with installation? [y/N]: " CONFIRM
 [[ "${CONFIRM,,}" == "y" ]] || { echo "Aborted."; exit 0; }
 
 # =============================================================================
-# STEP 2 – System package update
+# STEP 2 – Ensure the service user exists on the system
+# =============================================================================
+echo ""
+info "Checking system user '${SERVICE_USER}'…"
+
+if id "$SERVICE_USER" &>/dev/null; then
+  success "User '${SERVICE_USER}' already exists."
+else
+  warn "User '${SERVICE_USER}' does not exist – creating system account…"
+
+  # Ask whether to create a full home directory or a system (no-login) account
+  echo ""
+  echo -e "  ${BOLD}Account type:${RESET}"
+  echo -e "   ${CYAN}1)${RESET} System account  – no login shell, no home dir (recommended for services)"
+  echo -e "   ${CYAN}2)${RESET} Regular account  – has a home directory and bash shell"
+  read -rp "  Choose [1]: " INPUT_ACCT_TYPE
+  ACCT_TYPE="${INPUT_ACCT_TYPE:-1}"
+
+  if [[ "$ACCT_TYPE" == "2" ]]; then
+    # Regular user with home dir
+    useradd \
+      --create-home \
+      --shell /bin/bash \
+      "$SERVICE_USER"
+    success "Created regular user '${SERVICE_USER}' with home at /home/${SERVICE_USER}."
+  else
+    # System account — no login, no home dir
+    useradd \
+      --system \
+      --no-create-home \
+      --shell /usr/sbin/nologin \
+      "$SERVICE_USER"
+    success "Created system account '${SERVICE_USER}' (no login shell)."
+  fi
+
+  # Optional: set a password for non-system accounts so the user can log in
+  if [[ "$ACCT_TYPE" == "2" ]]; then
+    read -rp "  Set a password for '${SERVICE_USER}'? [y/N]: " SET_PASSWD
+    if [[ "${SET_PASSWD,,}" == "y" ]]; then
+      passwd "$SERVICE_USER"
+    else
+      warn "No password set. Account is locked until a password is assigned."
+    fi
+  fi
+fi
+
+# Make sure the app directory is owned by the service user
+if [[ "$(stat -c '%U' "$APP_DIR")" != "$SERVICE_USER" ]]; then
+  info "Transferring ownership of $APP_DIR to ${SERVICE_USER}…"
+  chown -R "${SERVICE_USER}:${SERVICE_USER}" "$APP_DIR"
+  success "Ownership updated."
+fi
+
+# =============================================================================
+# STEP 3 – System package update
 # =============================================================================
 echo ""
 info "Updating package list…"
 apt-get update -qq
 
 # =============================================================================
-# STEP 3 – Install PostgreSQL
+# STEP 4 – Install PostgreSQL
 # =============================================================================
 echo ""
 info "Installing PostgreSQL…"
@@ -95,7 +149,7 @@ else
 fi
 
 # =============================================================================
-# STEP 4 – Install Python 3 + pip + venv
+# STEP 5 – Install Python 3 + pip + venv
 # =============================================================================
 echo ""
 info "Installing Python 3 and pip…"
@@ -103,7 +157,7 @@ apt-get install -y -qq python3 python3-pip python3-venv python3-dev build-essent
 success "Python $(python3 --version) ready."
 
 # =============================================================================
-# STEP 5 – Install Node.js (LTS) + npm via NodeSource
+# STEP 6 – Install Node.js (LTS) + npm via NodeSource
 # =============================================================================
 echo ""
 info "Installing Node.js LTS…"
@@ -117,7 +171,7 @@ else
 fi
 
 # =============================================================================
-# STEP 6 – Create PostgreSQL database user and database
+# STEP 7 – Create PostgreSQL database user and database
 # =============================================================================
 echo ""
 info "Configuring PostgreSQL…"
@@ -143,7 +197,7 @@ sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_US
   && success "Granted privileges on '${DB_NAME}' to '${DB_USER}'."
 
 # =============================================================================
-# STEP 7 – Create Python virtual environment and install Python deps
+# STEP 8 – Create Python virtual environment and install Python deps
 # =============================================================================
 echo ""
 info "Setting up Python virtual environment in $APP_DIR/.venv …"
@@ -153,7 +207,7 @@ python3 -m venv "$APP_DIR/.venv"
 success "Python dependencies installed."
 
 # =============================================================================
-# STEP 8 – Install Node modules and build the frontend
+# STEP 9 – Install Node modules and build the frontend
 # =============================================================================
 echo ""
 info "Installing Node.js dependencies…"
@@ -166,7 +220,7 @@ sudo -u "$SERVICE_USER" npm run build --silent
 success "Frontend built into dist/."
 
 # =============================================================================
-# STEP 9 – Write the .env file
+# STEP 10 – Write the .env file
 # =============================================================================
 echo ""
 info "Writing .env …"
@@ -193,7 +247,7 @@ chmod 600 "$APP_DIR/.env"
 success ".env written and locked to owner."
 
 # =============================================================================
-# STEP 10 – Create systemd service file for the FastAPI backend
+# STEP 11 – Create systemd service file for the FastAPI backend
 # =============================================================================
 echo ""
 info "Creating systemd service: wled-backend.service …"
@@ -231,7 +285,7 @@ EOF
 success "wled-backend.service created."
 
 # =============================================================================
-# STEP 11 – Create systemd service file for the Vite / Node frontend
+# STEP 12 – Create systemd service file for the Vite / Node frontend
 # =============================================================================
 info "Creating systemd service: wled-frontend.service …"
 cat > /etc/systemd/system/wled-frontend.service <<EOF
@@ -269,7 +323,7 @@ sed -i "s|ExecStart=.*|ExecStart=${VITE_BIN} preview --host ${APP_HOST} --port $
 success "wled-frontend.service created."
 
 # =============================================================================
-# STEP 12 – Enable and start both services
+# STEP 13 – Enable and start both services
 # =============================================================================
 echo ""
 info "Reloading systemd daemon…"
