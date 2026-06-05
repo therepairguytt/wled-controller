@@ -60,49 +60,65 @@ export default function Broadcasts() {
   const wsRef = useRef(null)
 
   useEffect(() => {
+    let cancelled = false
+    let retryTimer = null
+
+    const handleMessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data)
+        if (msg.type === 'dispatch_start') {
+          setDispatchLog([{
+            kind: 'start',
+            text: `▶ Dispatch started → ${msg.total_controllers} controller(s), ${msg.total_items} item(s)`,
+            ts: new Date().toLocaleTimeString(),
+          }])
+          setShowLog(true)
+          setDispatching(msg.broadcast_id)
+        } else if (msg.type === 'dispatch_progress') {
+          const icon = msg.status === 'sending' ? '⏳' : msg.status === 'ok' ? '✅' : '❌'
+          setDispatchLog(prev => [...prev, {
+            kind: msg.status,
+            text: `${icon} [${msg.controller_name}] → ${msg.preset_name} — ${msg.status}`,
+            ts: new Date().toLocaleTimeString(),
+          }])
+        } else if (msg.type === 'dispatch_complete') {
+          setDispatchLog(prev => [...prev, {
+            kind: 'done',
+            text: `✔ Dispatch complete`,
+            ts: new Date().toLocaleTimeString(),
+          }])
+          setDispatching(null)
+        }
+      } catch {}
+    }
+
     const connect = () => {
-      const host = window.location.hostname
-      const ws   = new WebSocket(`ws://${host}:8000/ws`)
+      if (cancelled) return
+      // Read API base from the same env var the rest of the app uses
+      const apiBase = import.meta.env.VITE_API_HOST
+        ? `${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT || 8000}`
+        : `${window.location.hostname}:${import.meta.env.VITE_API_PORT || 8000}`
+      const ws = new WebSocket(`ws://${apiBase}/ws`)
       wsRef.current = ws
-
-      ws.onmessage = (e) => {
-        try {
-          const msg = JSON.parse(e.data)
-          if (msg.type === 'dispatch_start') {
-            setDispatchLog([{
-              kind: 'start',
-              text: `▶ Dispatch started → ${msg.total_controllers} controller(s), ${msg.total_items} item(s)`,
-              ts: new Date().toLocaleTimeString(),
-            }])
-            setShowLog(true)
-            setDispatching(msg.broadcast_id)
-          } else if (msg.type === 'dispatch_progress') {
-            const icon = msg.status === 'sending' ? '⏳'
-                       : msg.status === 'ok'      ? '✅'
-                       : '❌'
-            setDispatchLog(prev => [...prev, {
-              kind: msg.status,
-              text: `${icon} [${msg.controller_name}] → ${msg.preset_name} — ${msg.status}`,
-              ts: new Date().toLocaleTimeString(),
-              controller_id: msg.controller_id,
-            }])
-          } else if (msg.type === 'dispatch_complete') {
-            setDispatchLog(prev => [...prev, {
-              kind: 'done',
-              text: `✔ Dispatch complete`,
-              ts: new Date().toLocaleTimeString(),
-            }])
-            setDispatching(null)
-          }
-        } catch {}
+      ws.onmessage = handleMessage
+      ws.onclose   = () => {
+        if (!cancelled) {
+          retryTimer = setTimeout(connect, 3000)
+        }
       }
+      ws.onerror   = () => ws.close()
+    }
 
-      ws.onclose = () => {
-        setTimeout(connect, 3000)
+    connect()
+
+    return () => {
+      cancelled = true
+      clearTimeout(retryTimer)
+      const ws = wsRef.current
+      if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
+        ws.close()
       }
     }
-    connect()
-    return () => wsRef.current?.close()
   }, [])
 
   // Auto-scroll log
