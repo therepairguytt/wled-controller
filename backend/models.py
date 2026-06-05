@@ -119,6 +119,7 @@ class Broadcast(SQLModel, table=True):
     controller_id: Optional[int] = Field(default=None, foreign_key="controller.id")
     group_id: Optional[int] = Field(default=None, foreign_key="groups.id")
     is_active: bool = True
+    controller_delay_ms: int = Field(default=0)  # delay between each controller send (ms)
     created_on: datetime = Field(default_factory=get_utc_now, nullable=False)
     modified_on: datetime = Field(
         default_factory=get_utc_now,
@@ -215,9 +216,22 @@ class PlaylistItemCreate(BaseModel):
 class BroadcastCreate(BaseModel):
     name: str
     playlist_id: int
-    controller_id: int
-    group_id: int
+    controller_id: Optional[int] = None
+    group_id: Optional[int] = None
+    is_active: bool = True
+    controller_delay_ms: int = 0
+
+class BroadcastRead(BaseModel):
+    id: int
+    name: str
+    playlist_id: int
+    controller_id: Optional[int] = None
+    group_id: Optional[int] = None
     is_active: bool
+    controller_delay_ms: int
+    playlist_name: Optional[str] = None
+    target_name: Optional[str] = None
+    target_type: Optional[str] = None  # "controller" | "group" | "all"
 
 class BroadcastScheduleCreate(BaseModel):
     broadcast_id: int
