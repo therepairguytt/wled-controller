@@ -1,5 +1,6 @@
 import asyncio
 import websockets
+from datetime import timedelta
 from sqlmodel import Session, select
 from backend.database import engine
 from backend.models import Broadcast, PlaylistItem, Preset, Controller, BroadcastSchedule, get_utc_now
@@ -14,32 +15,55 @@ async def playlist_runner():
                 now = get_utc_now()
 
                 for b in broadcasts:
-                    items = session.exec(select(PlaylistItem).where(PlaylistItem.playlist_id == b.playlist_id).order_by(PlaylistItem.sort_order)).all()
-                    if not items: continue
+                    items = session.exec(
+                        select(PlaylistItem)
+                        .where(PlaylistItem.playlist_id == b.playlist_id)
+                        .order_by(PlaylistItem.sort_order)
+                    ).all()
+                    if not items:
+                        continue
 
                     state = active_broadcast_state.get(b.id)
-                    if not state or now >= state["next_switch"]:
-                        next_idx = (state["item_index"] + 1) % len(items) if state else 0
-                        target_item = items[next_idx]
-                        target_preset = session.get(Preset, target_item.preset_id)
 
-                        # Gather targets
-                        targets = []
-                        if b.controller_id:
-                            c = session.get(Controller, b.controller_id)
-                            if c: targets.append(c)
-                        elif b.group_id:
-                            targets = session.exec(select(Controller).where(Controller.group_id == b.group_id)).all()
+                    # Only advance when the current item's duration has elapsed
+                    if state and now < state["next_switch"]:
+                        continue
 
-                        await asyncio.gather(*[apply_preset_to_wled(t, target_preset) for t in targets])
-                        
-                        active_broadcast_state[b.id] = {
-                            "item_index": next_idx,
-                            "next_switch": now + asyncio.to_timedelta(seconds=target_item.duration_seconds)
-                        }
+                    next_idx     = (state["item_index"] + 1) % len(items) if state else 0
+                    target_item  = items[next_idx]
+                    target_preset = session.get(Preset, target_item.preset_id)
+
+                    if not target_preset:
+                        continue
+
+                    # Gather targets
+                    targets = []
+                    if b.controller_id:
+                        c = session.get(Controller, b.controller_id)
+                        if c:
+                            targets.append(c)
+                    elif b.group_id:
+                        targets = list(session.exec(
+                            select(Controller).where(Controller.group_id == b.group_id)
+                        ).all())
+
+                    if targets:
+                        await asyncio.gather(*[
+                            apply_preset_to_wled(t, target_preset)
+                            for t in targets
+                        ])
+                        print(f"[Playlist] Broadcast '{b.name}' → preset '{target_preset.name}' "
+                              f"(item {next_idx + 1}/{len(items)}, duration {target_item.duration_seconds}s)")
+
+                    # Save state AFTER successful send — use timedelta, not asyncio.to_timedelta
+                    active_broadcast_state[b.id] = {
+                        "item_index": next_idx,
+                        "next_switch": now + timedelta(seconds=target_item.duration_seconds),
+                    }
+
         except Exception as e:
-            print(f"Error in playlist_runner: {e}")
-            
+            print(f"[Playlist] Error in playlist_runner: {e}")
+
         await asyncio.sleep(1)
 
 async def broadcast_scheduler():
