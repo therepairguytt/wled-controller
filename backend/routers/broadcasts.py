@@ -215,7 +215,7 @@ async def dispatch_broadcast(b_id: int):
                 "status": "sending",
             })
 
-            ok = await apply_preset_to_wled(ctrl, preset, segments if segments else None)
+            ok = await apply_preset_to_wled(ctrl, preset, segments if segments else None, effect_only=False)
 
             await manager.broadcast({
                 "type": "dispatch_progress",
