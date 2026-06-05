@@ -7,7 +7,7 @@ load_dotenv()
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import SQLModel, Session, select
+from sqlmodel import SQLModel, Session, select, text
 
 from backend.database import engine
 from backend.models import WLEDEffects, WLEDPalettes
@@ -20,6 +20,17 @@ from backend.routers import controllers, groups, broadcasts, dashboard, segments
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     SQLModel.metadata.create_all(engine)
+
+    # ── Safe column migrations (add any new columns that may not exist yet) ──
+    with engine.connect() as conn:
+        # broadcast.controller_delay_ms (added in v26.6)
+        try:
+            conn.execute(text(
+                "ALTER TABLE broadcast ADD COLUMN IF NOT EXISTS controller_delay_ms INTEGER NOT NULL DEFAULT 0"
+            ))
+            conn.commit()
+        except Exception:
+            pass  # SQLite fallback or column already exists
 
     with Session(engine) as session:
         if session.exec(select(WLEDEffects)).first() is None:
