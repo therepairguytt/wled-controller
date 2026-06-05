@@ -30,13 +30,18 @@ def hex_to_rgb(hex_str: str) -> List[int]:
     h = hex_str.lstrip('#')
     return [int(h[i:i+2], 16) for i in (0, 2, 4)]
 
-async def apply_preset_to_wled(controller, preset, segments=None):
+async def apply_preset_to_wled(controller, preset, segments=None, effect_only: bool = True):
     """
     Send a preset to a WLED controller via its WebSocket.
-    If `segments` (list of ControllerSegment) is provided, each segment gets
-    its own entry in the `seg` array with the preset effect/palette and its
-    own start/stop/brightness/grouping/spacing/reverse/mirror settings.
-    Falls back to a single global segment when no segments are configured.
+
+    effect_only=True  (default, used by playlist runner):
+        Only sends effect/palette/color/brightness fields.
+        WLED crossfades smoothly without reconfiguring the segment,
+        which prevents the blink/flash between preset changes.
+
+    effect_only=False (used for initial segment push / broadcast dispatch):
+        Also sends segment geometry (start, stop, grp, spc, of, rev, mi).
+        Use this only when the segment layout itself needs to change.
     """
     base_colors = [
         hex_to_rgb(preset.color1),
@@ -47,23 +52,28 @@ async def apply_preset_to_wled(controller, preset, segments=None):
     if segments:
         seg_list = []
         for seg in segments:
-            seg_list.append({
+            entry = {
                 "id":  seg.segment_id,
-                "start": seg.start_led,
-                "stop":  seg.stop_led,
-                "grp":   seg.grouping,
-                "spc":   seg.spacing,
-                "of":    seg.offset,
-                "rev":   seg.reverse_direction,
-                "mi":    seg.mirror_effect,
-                "bri":   seg.seg_bri,
-                "col":   base_colors,
-                "fx":    preset.effect_id,
-                "sx":    preset.effect_speed,
-                "ix":    preset.effect_intensity,
-                "pal":   preset.palette_id,
-                "on":    True,
-            })
+                "col": base_colors,
+                "fx":  preset.effect_id,
+                "sx":  preset.effect_speed,
+                "ix":  preset.effect_intensity,
+                "pal": preset.palette_id,
+                "bri": seg.seg_bri,
+                "on":  True,
+            }
+            # Only include geometry when doing a full reconfigure
+            if not effect_only:
+                entry.update({
+                    "start": seg.start_led,
+                    "stop":  seg.stop_led,
+                    "grp":   seg.grouping,
+                    "spc":   seg.spacing,
+                    "of":    seg.offset,
+                    "rev":   seg.reverse_direction,
+                    "mi":    seg.mirror_effect,
+                })
+            seg_list.append(entry)
     else:
         seg_list = [{
             "col": base_colors,
@@ -74,10 +84,10 @@ async def apply_preset_to_wled(controller, preset, segments=None):
         }]
 
     payload = {
-        "on":  preset.is_on,
-        "bri": controller.main_brightness,
+        "on":         preset.is_on,
+        "bri":        controller.main_brightness,
         "transition": preset.transition,
-        "seg": seg_list,
+        "seg":        seg_list,
     }
 
     try:
