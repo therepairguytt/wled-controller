@@ -77,7 +77,7 @@ async def delete_preset(preset_id: int):
             session.rollback()
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot delete preset: Preset is assigned to a playlist or is in use."
+                detail="Preset is assigned to a playlist or is in use."
             )
 
     write_log(
