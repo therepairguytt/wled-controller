@@ -1,5 +1,6 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 from backend.database import engine, get_session
 from backend.models import Preset, PresetCreate, PresetRead
@@ -64,10 +65,20 @@ async def delete_preset(preset_id: int):
     with Session(engine) as session:
         preset = session.get(Preset, preset_id)
         if not preset:
-            raise HTTPException(status_code=404, detail="Preset not found")
-            
-        session.delete(preset)
-        session.commit()
+            raise HTTPException(
+                status_code=404,
+                detail="Preset not found"
+            )
+        
+        try:
+            session.delete(preset)
+            session.commit()
+        except IntegrityError:
+            session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot delete preset: Preset is assigned to a playlist or is in use."
+            )
 
     write_log(
         level="WARN", category="preset", action="deleted",
