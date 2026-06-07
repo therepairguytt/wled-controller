@@ -79,7 +79,7 @@ def delete_group(group_id: int, session: Session = Depends(get_session)):
         group_id_val = group.id
         session.delete(group)
         session.commit()
-    except IntegrityError:
+    except IntegrityError as e:
         session.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
