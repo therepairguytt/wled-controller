@@ -162,7 +162,10 @@ export default function Presets() {
           setPage(prev => prev - 1);
       }
     } catch (err) {
-      alert("Error deleting preset.")
+      const errorMessage = err.response?.data?.detail
+        ? (typeof err.response.data.detail === 'string' ? err.response.data.detail : JSON.stringify(err.response.data.detail))
+        : "An unexpected error occured."
+      alert(`Failed to delete: ${errorMessage}`);
     }
   };
 
