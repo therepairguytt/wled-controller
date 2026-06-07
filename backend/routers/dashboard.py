@@ -12,8 +12,9 @@ def dashboard_data(session: Session = Depends(get_session)):
     controllers = session.exec(statement).all()
 
     return {
+        "controllers": controllers,
         "online": len([c for c in controllers if c.is_online]),
         "offline": len([c for c in controllers if not c.is_online]),
-        "total": len(controllers),
-        "controllers": controllers
+        "total": len(controllers)
+        
     }
