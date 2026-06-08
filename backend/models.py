@@ -50,6 +50,7 @@ class ControllerSegment(SQLModel, table=True):
     offset: int = 0
     grouping: int = 1
     spacing: int = 0
+    reverse_direction: bool = False
     mirror_effect: bool = False
     seg_bri: int = 255
     created_on: datetime = Field(default_factory=get_utc_now, nullable=False)
