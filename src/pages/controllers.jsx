@@ -257,7 +257,7 @@ export default function Controllers() {
                 </tr>
               ))
             ) : (
-              <tr>
+              <tr className="col-span-7">
                 <td
                   className="p-8 text-center text-slate-400 italic text-m bg-slate-600/10 justify-center col-span-7"
                 >
