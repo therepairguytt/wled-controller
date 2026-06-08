@@ -15,6 +15,7 @@ export default function Presets() {
     name: '',
     is_on: true,
     transition: 7,
+    reverse_direction: false,
     effect_id: 140,
     effect_speed: 128,
     effect_intensity: 128,
@@ -102,6 +103,7 @@ export default function Presets() {
         name: preset.name,
         is_on: preset.is_on,
         transition: preset.transition,
+        reverse_direction: preset.reverse_direction,
         effect_id: preset.effect_id,
         effect_speed: preset.effect_speed,
         effect_intensity: preset.effect_intensity,
@@ -116,6 +118,7 @@ export default function Presets() {
         name: '',
         is_on: true,
         transition: 7,
+        reverse_direction: false,
         effect_id: 140,
         effect_speed: 128,
         effect_intensity: 128,
@@ -203,6 +206,7 @@ export default function Presets() {
                   <th onClick={() => handleSortRequest('is_on')} className="p-4 cursor-pointer hover:text-white transition-colors">
                     On/Off <SortIndicator currentSort={sort} column="is_on" />
                   </th>
+                  <th className="p-4">Dir</th>
                   <th className="p-4">Effect</th>
                   <th className="p-4">Palette</th>
                   <th className="p-4">Speed/Intens</th>
@@ -221,6 +225,13 @@ export default function Presets() {
                         <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded text-[10px] font-bold border border-emerald-500/30">ON</span>
                       ) : (
                         <span className="px-2 py-1 bg-slate-800 text-slate-400 rounded text-[10px] font-bold border border-slate-700">OFF</span>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      {preset.reverse_direction ? (
+                        <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-[10px] font-bold border border-purple-500/30">REV</span>
+                      ) : (
+                        <span className="px-2 py-1 bg-slate-800 text-slate-400 rounded text-[10px] font-bold border border-slate-700">FWD</span>
                       )}
                     </td>
                     <td className="p-4 text-slate-300">
@@ -336,6 +347,16 @@ export default function Presets() {
                   className="w-5 h-5 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0 cursor-pointer"
                 />
                 <label className="text-xs font-bold text-slate-300 cursor-pointer">Turn On State</label>
+              </div>
+
+              <div className="flex items-center gap-3 bg-slate-950/50 p-3 rounded-xl border border-slate-800">
+                <input
+                  type="checkbox"
+                  checked={formData.reverse_direction}
+                  onChange={e => setFormData({ ...formData, reverse_direction: e.target.checked })}
+                  className="w-5 h-5 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0 cursor-pointer"
+                />
+                <label className="text-xs font-bold text-slate-300 cursor-pointer">Reverse Direction</label>
               </div>
               
               <div>
