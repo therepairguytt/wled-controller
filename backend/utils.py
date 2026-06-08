@@ -60,6 +60,7 @@ async def apply_preset_to_wled(controller, preset, segments=None, effect_only: b
                 "ix":  preset.effect_intensity,
                 "pal": preset.palette_id,
                 "bri": seg.seg_bri,
+                "rev": preset.reverse_direction,
                 "on":  True,
             }
             # Only include geometry when doing a full reconfigure
@@ -70,7 +71,6 @@ async def apply_preset_to_wled(controller, preset, segments=None, effect_only: b
                     "grp":   seg.grouping,
                     "spc":   seg.spacing,
                     "of":    seg.offset,
-                    "rev":   seg.reverse_direction,
                     "mi":    seg.mirror_effect,
                 })
             seg_list.append(entry)
@@ -81,6 +81,7 @@ async def apply_preset_to_wled(controller, preset, segments=None, effect_only: b
             "sx":  preset.effect_speed,
             "ix":  preset.effect_intensity,
             "pal": preset.palette_id,
+            "rev": preset.reverse_direction,
         }]
 
     payload = {
