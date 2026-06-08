@@ -259,7 +259,7 @@ export default function Controllers() {
             ) : (
               <tr>
                 <td
-                  colSpan="6"
+                  colSpan="7"
                   className="p-8 text-center text-slate-400 italic text-m bg-slate-600/10 justify-center"
                 >
                   {groups.length > 0 ? (

@@ -34,7 +34,6 @@ async def add_segments(data: ControllerSegmentCreate):
             offset=data.offset,
             grouping=data.grouping,
             spacing=data.spacing,
-            reverse_direction=data.reverse_direction,
             mirror_effect=data.mirror_effect,
             seg_bri=data.seg_bri
         )

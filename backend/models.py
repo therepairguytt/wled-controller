@@ -186,7 +186,6 @@ class ControllerSegmentCreate(BaseModel):
     segment_id: Optional[int] = None
     start_led: int
     stop_led: int
-    reverse_direction: bool
     mirror_effect: bool
     offset: int
     grouping: int
@@ -199,6 +198,7 @@ class PresetCreate(BaseModel):
     effect_id: int
     effect_speed: int
     effect_intensity: int
+    reverse_direction: bool
     palette_id: int
     color1: str
     color2: str
@@ -289,7 +289,6 @@ class ControllerSegmentReadWithName(SQLModel):
     offset: int
     grouping: int
     spacing: int
-    reverse_direction: bool
     mirror_effect: bool
     seg_bri: int
 
@@ -340,6 +339,7 @@ class PresetRead(SQLModel):
     effect_id: int
     effect_speed: int
     effect_intensity: int
+    reverse_direction: bool
     palette_id: int
     color1: str
     color2: str
