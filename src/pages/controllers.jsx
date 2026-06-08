@@ -259,7 +259,7 @@ export default function Controllers() {
             ) : (
               <tr>
                 <td
-                  className="p-8 text-center text-slate-400 italic text-m bg-slate-600/10 justify-center"
+                  className="p-8 text-center text-slate-400 italic text-m bg-slate-600/10 justify-center col-auto"
                 >
                   {groups.length > 0 ? (
                     <div>No controllers created.</div>
