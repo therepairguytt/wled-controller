@@ -14,6 +14,7 @@ export default function ControllerSegments() {
     segment_id: 0,
     start_led: 0,
     stop_led: 30,
+    reverse_direction: false,
     mirror_effect: false,
     offset: 0,
     grouping: 1,
@@ -117,6 +118,7 @@ export default function ControllerSegments() {
         offset: segment.offset,
         grouping: segment.grouping,
         spacing: segment.spacing,
+        reverse_direction: segment.reverse_direction,
         mirror_effect: segment.mirror_effect,
         seg_bri: segment.seg_bri
       })
@@ -129,6 +131,7 @@ export default function ControllerSegments() {
         segment_id: getNextSegmentId(defaultControllerId),
         start_led: getNextStartLed(defaultControllerId),
         stop_led: getNextStartLed(defaultControllerId) + 30,
+        reverse_direction: false,
         mirror_effect: false,
         offset: 0,
         grouping: 1,
@@ -227,6 +230,9 @@ export default function ControllerSegments() {
                 <th onClick={() => handleSegmentSortRequest('spacing')} className="p-4 text-center cursor-pointer hover:text-white transition-colors">
                   <div className="flex items-center justify-center gap-1">Spacing<SortIndicator currentSort={segmentSort} column="spacing" /></div>
                 </th>
+                <th onClick={() => handleSegmentSortRequest('reverse_direction')} className="p-4 text-center cursor-pointer hover:text-white transition-colors">
+                  <div className="flex items-center justify-center gap-1">Reverse<SortIndicator currentSort={segmentSort} column="reverse_direction" /></div>
+                </th>
                 <th className="p-4 text-center">Mirror</th>
                 <th className="p-4 text-right">Actions</th>
               </tr>
@@ -259,6 +265,16 @@ export default function ControllerSegments() {
                 </td>
                 <td className="p-4 text-center">
                   <span className="text-xs font-mono text-slate-300">{ctrl.spacing}</span>
+                </td>
+                <td className="p-4 text-center">
+                  <input
+                    type="checkbox"
+                    value={ctrl.reverse_direction}
+                    checked={ctrl.reverse_direction}
+                    readOnly
+                    onClick={(e) => e.preventDefault()}
+                    className="w-5 h-5 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0 pointer-events-none"
+                  />
                 </td>
                 <td className="p-4 text-center">
                   <input
@@ -488,6 +504,17 @@ export default function ControllerSegments() {
                   className="w-5 h-5 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0"
                 />
                 <label className="text-xs font-bold text-slate-300 cursor-pointer">Mirror Effect</label>
+              </div>
+
+              <div className="flex items-center gap-3 bg-slate-950/50 p-3 rounded-xl border border-slate-800">
+                <input
+                  type="checkbox"
+                  title="Reverse Direction reverses the order of LEDs in this segment."
+                  checked={formData.reverse_direction}
+                  onChange={e => setFormData({ ...formData, reverse_direction: e.target.checked })}
+                  className="w-5 h-5 rounded border-slate-700 bg-slate-900 text-emerald-600 focus:ring-0"
+                />
+                <label className="text-xs font-bold text-slate-300 cursor-pointer">Reverse</label>
               </div>
             </div>
 
