@@ -32,6 +32,15 @@ async def lifespan(app: FastAPI):
         except Exception:
             pass  # SQLite fallback or column already exists
 
+        # preset.reverse_direction
+        try:
+            conn.execute(text(
+                "ALTER TABLE preset ADD COLUMN reverse_direction BOOLEAN NOT NULL DEFAULT 0"
+            ))
+            conn.commit()
+        except Exception:
+            pass
+
     with Session(engine) as session:
         if session.exec(select(WLEDEffects)).first() is None:
             for eff_id, name in WLED_EFFECTS.items():
