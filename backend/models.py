@@ -187,10 +187,11 @@ class ControllerSegmentCreate(BaseModel):
     segment_id: Optional[int] = None
     start_led: int
     stop_led: int
-    mirror_effect: bool
     offset: int
     grouping: int
     spacing: int
+    reverse_direction: bool
+    mirror_effect: bool
     seg_bri: int
 
 class PresetCreate(BaseModel):
@@ -290,6 +291,7 @@ class ControllerSegmentReadWithName(SQLModel):
     offset: int
     grouping: int
     spacing: int
+    reverse_direction: bool
     mirror_effect: bool
     seg_bri: int
 
