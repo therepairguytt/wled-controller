@@ -60,7 +60,7 @@ async def apply_preset_to_wled(controller, preset, segments=None, effect_only: b
                 "ix":  preset.effect_intensity,
                 "pal": preset.palette_id,
                 "bri": seg.seg_bri,
-                "rev": preset.reverse_direction,
+                "rev": bool(seg.reverse_direction) != bool(preset.reverse_direction),
                 "on":  True,
             }
             # Only include geometry when doing a full reconfigure
