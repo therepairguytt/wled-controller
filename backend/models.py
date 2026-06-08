@@ -50,7 +50,6 @@ class ControllerSegment(SQLModel, table=True):
     offset: int = 0
     grouping: int = 1
     spacing: int = 0
-    reverse_direction: bool = False
     mirror_effect: bool = False
     seg_bri: int = 255
     created_on: datetime = Field(default_factory=get_utc_now, nullable=False)
@@ -66,6 +65,7 @@ class Preset(SQLModel, table=True):
     name: str
     is_on: bool = True
     transition: int = 7
+    reverse_direction: bool = False
     effect_id: int = 140
     effect_speed: int = 128
     effect_intensity: int = 128
