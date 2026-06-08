@@ -3,7 +3,7 @@ import websockets
 from datetime import timedelta
 from sqlmodel import Session, select
 from backend.database import engine
-from backend.models import Broadcast, PlaylistItem, Preset, Controller, BroadcastSchedule, get_utc_now
+from backend.models import Broadcast, PlaylistItem, Preset, Controller, BroadcastSchedule, get_utc_now, ControllerSegment
 from backend.utils import active_broadcast_state, apply_preset_to_wled, manager
 from backend.logger import write_log
 
@@ -48,10 +48,12 @@ async def playlist_runner():
                         ).all())
 
                     if targets:
-                        await asyncio.gather(*[
-                            apply_preset_to_wled(t, target_preset)
-                            for t in targets
-                        ])
+                        tasks_to_run = []
+                        for t in targets:
+                            segments = session.exec(select(ControllerSegment).where(ControllerSegment.controller_id == t.id)).all()
+                            tasks_to_run.append(apply_preset_to_wled(t, target_preset, segments if segments else None))
+                            
+                        await asyncio.gather(*tasks_to_run)
                         print(f"[Playlist] Broadcast '{b.name}' → preset '{target_preset.name}' "
                               f"(item {next_idx + 1}/{len(items)}, duration {target_item.duration_seconds}s)")
 
