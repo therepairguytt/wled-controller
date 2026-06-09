@@ -36,6 +36,12 @@ async def playlist_runner():
                     if not target_preset:
                         continue
 
+                    previous_preset = None
+                    if state:
+                        current_idx = state["item_index"]
+                        if current_idx < len(items):
+                            previous_preset = session.get(Preset, items[current_idx].preset_id)
+
                     # Gather targets
                     targets = []
                     if b.controller_id:
@@ -51,7 +57,7 @@ async def playlist_runner():
                         tasks_to_run = []
                         for t in targets:
                             segments = session.exec(select(ControllerSegment).where(ControllerSegment.controller_id == t.id)).all()
-                            tasks_to_run.append(apply_preset_to_wled(t, target_preset, segments if segments else None))
+                            tasks_to_run.append(apply_preset_to_wled(t, target_preset, segments if segments else None, effect_only=True, previous_preset=previous_preset))
                             
                         await asyncio.gather(*tasks_to_run)
                         print(f"[Playlist] Broadcast '{b.name}' → preset '{target_preset.name}' "
