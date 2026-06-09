@@ -15,7 +15,7 @@ from backend.wled_seed_data import WLED_EFFECTS, WLED_PALETTES
 from backend.utils import manager
 from backend.tasks import playlist_runner, broadcast_scheduler, controller_health_checker
 
-from backend.routers import controllers, groups, broadcasts, dashboard, segments, palettes, effects, functions, health, system, logs, presets, playlists
+from backend.routers import controllers, groups, broadcasts, dashboard, segments, palettes, effects, functions, health, system, logs, presets, playlists, discovery
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -89,6 +89,7 @@ app.include_router(system.router)
 app.include_router(logs.router)
 app.include_router(presets.router)
 app.include_router(playlists.router)
+app.include_router(discovery.router)
 
 VITE_API_HOST = os.getenv("VITE_API_HOST", "127.0.0.1")
 VITE_API_PORT = int(os.getenv("VITE_API_PORT", 8000))
