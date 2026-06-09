@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import api from './services/api'
 import {
   LayoutDashboard, Database, Layers, ListMusic, GlobeOff,
-  Radio, Search, Settings2, SplitSquareVertical, CalendarCheck, Palette, ScrollText
+  Radio, Search, Settings2, SplitSquareVertical, CalendarCheck, Palette, ScrollText, Radar
 } from 'lucide-react'
 
 // Page Imports
@@ -20,12 +20,14 @@ import Header from './components/header'
 import Navbar from './components/navbar'
 import PalletsEffects from './pages/palletsandeffects'
 import Logs from './pages/logs'
+import Discovery from './pages/discovery'
 
 export default function App() {
 
   const menuItems = useMemo(() => [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, component: <Dashboard /> },
     { id: 'controllers', label: 'Controllers', icon: <Database size={18} />, component: <Controllers /> },
+    { id: 'discovery', label: 'Discovery', icon: <Radar size={18} />, component: <Discovery /> },
     { id: 'segments', label: 'Segments', icon: <SplitSquareVertical size={18} />, component: <Segments /> },
     { id: 'presets', label: 'Presets', icon: <Layers size={18} />, component: <Presets /> },
     { id: 'playlists', label: 'Playlists', icon: <ListMusic size={18} />, component: <Playlists /> },
