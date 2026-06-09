@@ -30,7 +30,7 @@ def hex_to_rgb(hex_str: str) -> List[int]:
     h = hex_str.lstrip('#')
     return [int(h[i:i+2], 16) for i in (0, 2, 4)]
 
-async def apply_preset_to_wled(controller, preset, segments=None, effect_only: bool = True):
+async def apply_preset_to_wled(controller, preset, segments=None, effect_only: bool = True, previous_preset=None):
     """
     Send a preset to a WLED controller via its WebSocket.
 
@@ -55,14 +55,25 @@ async def apply_preset_to_wled(controller, preset, segments=None, effect_only: b
             entry = {
                 "id":  seg.segment_id,
                 "col": base_colors,
-                "fx":  preset.effect_id,
-                "sx":  preset.effect_speed,
-                "ix":  preset.effect_intensity,
-                "pal": preset.palette_id,
                 "bri": seg.seg_bri,
-                "rev": bool(seg.reverse_direction) != bool(preset.reverse_direction),
                 "on":  True,
             }
+            if not previous_preset or preset.effect_id != previous_preset.effect_id:
+                entry["fx"] = preset.effect_id
+            if not previous_preset or preset.effect_speed != previous_preset.effect_speed:
+                entry["sx"] = preset.effect_speed
+            if not previous_preset or preset.effect_intensity != previous_preset.effect_intensity:
+                entry["ix"] = preset.effect_intensity
+            if not previous_preset or preset.palette_id != previous_preset.palette_id:
+                entry["pal"] = preset.palette_id
+                
+            new_rev = bool(seg.reverse_direction) != bool(preset.reverse_direction)
+            if not previous_preset:
+                entry["rev"] = new_rev
+            else:
+                old_rev = bool(seg.reverse_direction) != bool(previous_preset.reverse_direction)
+                if new_rev != old_rev:
+                    entry["rev"] = new_rev
             # Only include geometry when doing a full reconfigure
             if not effect_only:
                 entry.update({
@@ -75,14 +86,20 @@ async def apply_preset_to_wled(controller, preset, segments=None, effect_only: b
                 })
             seg_list.append(entry)
     else:
-        seg_list = [{
+        entry = {
             "col": base_colors,
-            "fx":  preset.effect_id,
-            "sx":  preset.effect_speed,
-            "ix":  preset.effect_intensity,
-            "pal": preset.palette_id,
-            "rev": preset.reverse_direction,
-        }]
+        }
+        if not previous_preset or preset.effect_id != previous_preset.effect_id:
+            entry["fx"] = preset.effect_id
+        if not previous_preset or preset.effect_speed != previous_preset.effect_speed:
+            entry["sx"] = preset.effect_speed
+        if not previous_preset or preset.effect_intensity != previous_preset.effect_intensity:
+            entry["ix"] = preset.effect_intensity
+        if not previous_preset or preset.palette_id != previous_preset.palette_id:
+            entry["pal"] = preset.palette_id
+        if not previous_preset or preset.reverse_direction != previous_preset.reverse_direction:
+            entry["rev"] = preset.reverse_direction
+        seg_list = [entry]
 
     payload = {
         "on":         preset.is_on,
