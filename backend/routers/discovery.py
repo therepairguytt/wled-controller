@@ -47,7 +47,7 @@ class WLEDListener:
 async def discover_wled_devices():
     zeroconf = Zeroconf()
     listener = WLEDListener()
-    browser = ServiceBrowser(zeroconf, "_wled._tcp.local.", listener)
+    browser = ServiceBrowser(zeroconf, "_http._tcp.local.", listener)
     
     # Wait for mDNS multicast responses (3 seconds is usually enough)
     await asyncio.sleep(6)
