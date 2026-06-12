@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import api from '../services/api'
 import { Radar, Plus, RefreshCw, Server } from 'lucide-react'
 
@@ -6,6 +6,12 @@ export default function Discovery() {
   const [isScanning, setIsScanning] = useState(false)
   const [devices, setDevices] = useState([])
   const [error, setError] = useState(null)
+  const [groups, setGroups] = useState([])
+  const [selectedGroups, setSelectedGroups] = useState({})
+  
+  useEffect(() => {
+    api.get('/api/groups').then(res => setGroups(res.data)).catch(console.error)
+  }, [])
   
   const scanNetwork = useCallback(async () => {
     setIsScanning(true)
@@ -23,16 +29,22 @@ export default function Discovery() {
   }, [])
   
   const handleAdd = async (device) => {
+    const groupId = selectedGroups[device.ip_address]
+    if (!groupId) {
+      alert("Please select a group for this controller before adding!")
+      return
+    }
     try {
       await api.post('/api/controllers', {
         name: device.name || "New WLED",
         ip_address: device.ip_address,
         location: "Discovered",
-        group_id: null,
+        group_id: parseInt(groupId),
         main_brightness: 255,
         is_active: true,
         led_on: true
       });
+      setDevices(prev => prev.map(d => d.ip_address === device.ip_address ? {...d, is_added: true} : d))
       alert(`Successfully added ${device.name} (${device.ip_address})!`)
     } catch (err) {
       alert("Failed to add controller. It might already exist in the database.")
@@ -82,19 +94,35 @@ export default function Discovery() {
                         </span>
                     </div>
                     
-                    <div className="space-y-2 mb-6">
-                        <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
-                            <span className="w-16 opacity-50">IP</span>
+                    <div className="space-y-3 mb-6">
+                        <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
+                            <span className="opacity-50">IP</span>
                             <span className="text-slate-300">{device.ip_address}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
-                            <span className="w-16 opacity-50">MAC</span>
+                        <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
+                            <span className="opacity-50">MAC</span>
                             <span className="text-slate-300">{device.mac || 'Unknown'}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
-                            <span className="w-16 opacity-50">VER</span>
+                        <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
+                            <span className="opacity-50">VER</span>
                             <span className="text-slate-300">v{device.version || 'Unknown'}</span>
                         </div>
+                        
+                        {!device.is_added && (
+                            <div className="pt-3 mt-3 border-t border-slate-800">
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Assign Group</label>
+                                <select 
+                                    className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded p-2 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                                    value={selectedGroups[device.ip_address] || ""}
+                                    onChange={(e) => setSelectedGroups({...selectedGroups, [device.ip_address]: e.target.value})}
+                                >
+                                    <option value="" disabled>Select a group...</option>
+                                    {groups.map(g => (
+                                        <option key={g.id} value={g.id}>{g.group_name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                     </div>
                     
                     <button 
