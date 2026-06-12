@@ -1,9 +1,12 @@
 import asyncio
 import httpx
 from typing import List
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from zeroconf import ServiceBrowser, Zeroconf
 from pydantic import BaseModel
+from sqlmodel import Session, select
+from backend.database import get_session
+from backend.models import Controller
 
 router = APIRouter(prefix="/api/discovery", tags=["discovery"])
 
@@ -12,6 +15,7 @@ class DiscoveredDevice(BaseModel):
     ip_address: str
     mac: str = ""
     version: str = "Unknown"
+    is_added: bool = False
 
 class WLEDListener:
     def __init__(self):
@@ -53,7 +57,7 @@ class WLEDListener:
         pass
 
 @router.get("", response_model=List[DiscoveredDevice])
-async def discover_wled_devices():
+async def discover_wled_devices(session: Session = Depends(get_session)):
     zeroconf = Zeroconf()
     listener = WLEDListener()
     browser = ServiceBrowser(zeroconf, ["_wled._tcp.local.", "_http._tcp.local."], listener)
@@ -71,7 +75,15 @@ async def discover_wled_devices():
                 res = await client.get(f"http://{device['ip_address']}/json/info")
                 if res.status_code == 200:
                     data = res.json()
+                    
+                    if "info" in data:
+                        data = data["info"]
+                        
                     device["version"] = data.get("ver", "Unknown")
+                    
+                    if not device.get("mac") and data.get("mac"):
+                        device["mac"] = data.get("mac")
+                        
                     return device
         except Exception:
             pass
@@ -85,8 +97,11 @@ async def discover_wled_devices():
     tasks = [verify_device(d) for d in listener.devices]
     results = await asyncio.gather(*tasks)
     
+    existing_ips = set(session.exec(select(Controller.ip_address)).all())
+    
     for r in results:
         if r and not any(v["ip_address"] == r["ip_address"] for v in verified_devices):
+            r["is_added"] = r["ip_address"] in existing_ips
             verified_devices.append(r)
             
     return verified_devices

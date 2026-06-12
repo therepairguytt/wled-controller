@@ -99,9 +99,15 @@ export default function Discovery() {
                     
                     <button 
                         onClick={() => handleAdd(device)}
-                        className="w-full py-2 bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white rounded-lg text-xs font-bold transition-colors cursor-pointer flex justify-center items-center gap-2"
+                        disabled={device.is_added}
+                        className={`w-full py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer flex justify-center items-center gap-2 ${
+                            device.is_added 
+                                ? 'bg-slate-800/50 text-slate-500 cursor-not-allowed border border-slate-800'
+                                : 'bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white border border-transparent'
+                        }`}
                     >
-                        <Plus size={14} /> Add to Controllers
+                        {device.is_added ? null : <Plus size={14} />} 
+                        {device.is_added ? "Already Added" : "Add to Controllers"}
                     </button>
                 </div>
             ))}
