@@ -1,4 +1,5 @@
 import asyncio
+import httpx
 from typing import List
 from fastapi import APIRouter
 from zeroconf import ServiceBrowser, Zeroconf
@@ -32,20 +33,19 @@ class WLEDListener:
             
             clean_name = name.replace("._wled._tcp.local.", "").replace("._http._tcp.local.", "").replace(".local.", "")
             
-            is_wled = False
+            is_trusted = False
             if "_wled._tcp.local." in type:
-                is_wled = True
+                is_trusted = True
             elif "wled" in name.lower() or "wled" in clean_name.lower():
-                is_wled = True
-            elif b'mac' in (info.properties or {}):
-                is_wled = True  # WLED often includes the MAC in TXT records
+                is_trusted = True
                 
             # Avoid duplicates
-            if is_wled and ip and not any(d["ip_address"] == ip for d in self.devices):
+            if ip and not any(d["ip_address"] == ip for d in self.devices):
                 self.devices.append({
                     "name": clean_name,
                     "ip_address": ip,
-                    "mac": mac
+                    "mac": mac,
+                    "_trusted": is_trusted
                 })
 
     def update_service(self, zeroconf, type, name):
@@ -57,8 +57,30 @@ async def discover_wled_devices():
     listener = WLEDListener()
     browser = ServiceBrowser(zeroconf, ["_wled._tcp.local.", "_http._tcp.local."], listener)
     
-    # Wait for mDNS multicast responses (6 seconds is better for sleepy devices)
-    await asyncio.sleep(6)
+    # Wait for mDNS multicast responses
+    await asyncio.sleep(5)
     
     zeroconf.close()
-    return listener.devices
+    
+    verified_devices = []
+    
+    async def verify_device(device):
+        if device.get("_trusted"):
+            return device
+        try:
+            async with httpx.AsyncClient(timeout=1.5) as client:
+                res = await client.get(f"http://{device['ip_address']}/json/info")
+                if res.status_code == 200 and "wled" in res.text.lower():
+                    return device
+        except Exception:
+            pass
+        return None
+
+    tasks = [verify_device(d) for d in listener.devices]
+    results = await asyncio.gather(*tasks)
+    
+    for r in results:
+        if r and not any(v["ip_address"] == r["ip_address"] for v in verified_devices):
+            verified_devices.append(r)
+            
+    return verified_devices
