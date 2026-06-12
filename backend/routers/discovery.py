@@ -11,6 +11,7 @@ class DiscoveredDevice(BaseModel):
     name: str
     ip_address: str
     mac: str = ""
+    version: str = "Unknown"
 
 class WLEDListener:
     def __init__(self):
@@ -65,15 +66,20 @@ async def discover_wled_devices():
     verified_devices = []
     
     async def verify_device(device):
-        if device.get("_trusted"):
-            return device
         try:
             async with httpx.AsyncClient(timeout=1.5) as client:
                 res = await client.get(f"http://{device['ip_address']}/json/info")
-                if res.status_code == 200 and "wled" in res.text.lower():
+                if res.status_code == 200:
+                    data = res.json()
+                    device["version"] = data.get("ver", "Unknown")
                     return device
         except Exception:
             pass
+            
+        if device.get("_trusted"):
+            device["version"] = "Unknown"
+            return device
+            
         return None
 
     tasks = [verify_device(d) for d in listener.devices]

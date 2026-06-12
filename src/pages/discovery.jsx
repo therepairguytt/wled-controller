@@ -91,6 +91,10 @@ export default function Discovery() {
                             <span className="w-16 opacity-50">MAC</span>
                             <span className="text-slate-300">{device.mac || 'Unknown'}</span>
                         </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
+                            <span className="w-16 opacity-50">VER</span>
+                            <span className="text-slate-300">v{device.version || 'Unknown'}</span>
+                        </div>
                     </div>
                     
                     <button 
