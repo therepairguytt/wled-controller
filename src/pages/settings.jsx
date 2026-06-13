@@ -124,7 +124,7 @@ export default function Settings() {
     const isAll = target === 'all';
     const endpoint = isAll
       ? '/api/controllers/reboot-all'
-      : `/api/controllers/reboot/${selectedControllerId}`;
+      : `/api/reboot/${selectedControllerId}`;
 
     if (!isAll && !selectedControllerId) {
       alert("Please select a controller first.");
