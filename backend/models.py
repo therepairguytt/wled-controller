@@ -267,6 +267,7 @@ class ControllerReadWithGroup(SQLModel):
     main_brightness: int
     led_on: bool
     is_active: bool
+    is_online: bool
 
 class DashboardControllerWithGroup(SQLModel):
     online: int
