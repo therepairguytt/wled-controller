@@ -54,14 +54,26 @@ async def playlist_runner():
                         ).all())
 
                     if targets:
-                        tasks_to_run = []
-                        for t in targets:
-                            segments = session.exec(select(ControllerSegment).where(ControllerSegment.controller_id == t.id)).all()
-                            tasks_to_run.append(apply_preset_to_wled(t, target_preset, segments if segments else None, effect_only=True, previous_preset=previous_preset))
+                        delay_ms = b.controller_delay_ms if hasattr(b, 'controller_delay_ms') and b.controller_delay_ms else 0
+                        
+                        async def delayed_apply(target_id, preset_id, delay_sec, prev_preset_id):
+                            if delay_sec > 0:
+                                await asyncio.sleep(delay_sec)
+                            with Session(engine) as inner_session:
+                                inner_t = inner_session.get(Controller, target_id)
+                                inner_preset = inner_session.get(Preset, preset_id)
+                                inner_prev_preset = inner_session.get(Preset, prev_preset_id) if prev_preset_id else None
+                                inner_segments = inner_session.exec(select(ControllerSegment).where(ControllerSegment.controller_id == target_id)).all()
+                                if inner_t and inner_preset:
+                                    await apply_preset_to_wled(inner_t, inner_preset, inner_segments if inner_segments else None, effect_only=True, previous_preset=inner_prev_preset)
+
+                        for idx, t in enumerate(targets):
+                            target_delay = (delay_ms * idx) / 1000.0
+                            prev_id = previous_preset.id if previous_preset else None
+                            asyncio.create_task(delayed_apply(t.id, target_preset.id, target_delay, prev_id))
                             
-                        await asyncio.gather(*tasks_to_run)
                         print(f"[Playlist] Broadcast '{b.name}' → preset '{target_preset.name}' "
-                              f"(item {next_idx + 1}/{len(items)}, duration {target_item.duration_seconds}s)")
+                              f"(item {next_idx + 1}/{len(items)}, duration {target_item.duration_seconds}s, delay {delay_ms}ms)")
 
                     # Save state AFTER successful send — use timedelta, not asyncio.to_timedelta
                     active_broadcast_state[b.id] = {
