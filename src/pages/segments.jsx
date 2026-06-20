@@ -390,7 +390,7 @@ export default function ControllerSegments() {
                 <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Stop LED</label>
                 <input
                   required
-                  placeholder='30'
+                  placeholder='200'
                   type="number"
                   title="Stop LED is the index of the last LED in this segment."
                   value={formData.stop_led}
