@@ -423,7 +423,7 @@ export default function ControllerSegments() {
                       controller_id: newControllerId,
                       segment_id: getNextSegmentId(newControllerId),
                       start_led: getNextStartLed(newControllerId),
-                      stop_led: getNextStartLed(newControllerId) + 30
+                      stop_led: getNextStartLed(newControllerId) + 200
                     })
                   }}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none"
