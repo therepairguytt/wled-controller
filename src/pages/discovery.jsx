@@ -40,7 +40,7 @@ export default function Discovery() {
         ip_address: device.ip_address,
         location: "Discovered",
         group_id: parseInt(groupId),
-        main_brightness: 255,
+        main_brightness: 128,
         is_active: true,
         led_on: true
       });
