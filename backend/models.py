@@ -274,6 +274,7 @@ class DashboardControllerWithGroup(SQLModel):
     online: int
     offline: int
     total: int
+    total_power: int = 0
     controllers: List[ControllerReadWithGroup]
 
 class ControllerRead(SQLModel):
