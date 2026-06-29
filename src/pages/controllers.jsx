@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import api from '../services/api'
-import { Edit3, Trash2, Plus, X, Server, Lightbulb, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Sun } from 'lucide-react'
+import { Edit3, Trash2, Plus, X, Server, Lightbulb, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Sun, ExternalLink } from 'lucide-react'
 
 export default function Controllers() {
   const [controllers, setControllers] = useState([])
@@ -42,49 +42,49 @@ export default function Controllers() {
   const [controllerRowsPerPage, setControllerRowsPerPage] = useState(10);
 
   const handleControllerSortRequest = (column) => {
-      let direction = 'asc';
-      if (controllerSort.column === column && controllerSort.direction === 'asc') {
-          direction = 'desc';
-      }
-      setControllerSort({ column, direction });
-      setControllerPage(1);
+    let direction = 'asc';
+    if (controllerSort.column === column && controllerSort.direction === 'asc') {
+      direction = 'desc';
+    }
+    setControllerSort({ column, direction });
+    setControllerPage(1);
   };
 
   const sortedControllers = useMemo(() => {
-      const sortableItems = [...controllers];
-      if (controllerSort.column !== null) {
-          sortableItems.sort((a, b) => {
-              let aVal = controllerSort.column === 'group_name' ? a.group?.group_name : a[controllerSort.column];
-              let bVal = controllerSort.column === 'group_name' ? b.group?.group_name : b[controllerSort.column];
+    const sortableItems = [...controllers];
+    if (controllerSort.column !== null) {
+      sortableItems.sort((a, b) => {
+        let aVal = controllerSort.column === 'group_name' ? a.group?.group_name : a[controllerSort.column];
+        let bVal = controllerSort.column === 'group_name' ? b.group?.group_name : b[controllerSort.column];
 
-              if (['id', 'main_brightness'].includes(controllerSort.column)) {
-                  return controllerSort.direction === 'asc' ? (aVal || 0) - (bVal || 0) : (bVal || 0) - (aVal || 0);
-              }
-              if (['led_on', 'is_active'].includes(controllerSort.column)) {
-                  return controllerSort.direction === 'asc' ? (aVal === bVal ? 0 : aVal ? 1 : -1) : (aVal === bVal ? 0 : aVal ? -1 : 1);
-              }
+        if (['id', 'main_brightness'].includes(controllerSort.column)) {
+          return controllerSort.direction === 'asc' ? (aVal || 0) - (bVal || 0) : (bVal || 0) - (aVal || 0);
+        }
+        if (['led_on', 'is_active'].includes(controllerSort.column)) {
+          return controllerSort.direction === 'asc' ? (aVal === bVal ? 0 : aVal ? 1 : -1) : (aVal === bVal ? 0 : aVal ? -1 : 1);
+        }
 
-              aVal = aVal?.toString().toLowerCase() || '';
-              bVal = bVal?.toString().toLowerCase() || '';
-              if (aVal < bVal) return controllerSort.direction === 'asc' ? -1 : 1;
-              if (aVal > bVal) return controllerSort.direction === 'asc' ? 1 : -1;
-              return 0;
-          });
-      }
-      return sortableItems;
+        aVal = aVal?.toString().toLowerCase() || '';
+        bVal = bVal?.toString().toLowerCase() || '';
+        if (aVal < bVal) return controllerSort.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return controllerSort.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return sortableItems;
   }, [controllers, controllerSort]);
 
   const totalControllerPages = Math.ceil(sortedControllers.length / controllerRowsPerPage) || 1;
   const paginatedControllers = useMemo(() => {
-      const startIndex = (controllerPage - 1) * controllerRowsPerPage;
-      return sortedControllers.slice(startIndex, startIndex + controllerRowsPerPage);
+    const startIndex = (controllerPage - 1) * controllerRowsPerPage;
+    return sortedControllers.slice(startIndex, startIndex + controllerRowsPerPage);
   }, [sortedControllers, controllerPage, controllerRowsPerPage]);
 
   const SortIndicator = ({ currentSort, column }) => {
-      if (currentSort.column !== column) return <ArrowUpDown size={14} className="opacity-40 inline" />;
-      return currentSort.direction === 'asc' 
-          ? <ArrowUp size={14} className="text-indigo-400 inline" /> 
-          : <ArrowDown size={14} className="text-indigo-400 inline" />;
+    if (currentSort.column !== column) return <ArrowUpDown size={14} className="opacity-40 inline" />;
+    return currentSort.direction === 'asc'
+      ? <ArrowUp size={14} className="text-indigo-400 inline" />
+      : <ArrowDown size={14} className="text-indigo-400 inline" />;
   };
 
   const openModal = (controller = null) => {
@@ -148,7 +148,7 @@ export default function Controllers() {
       fetchControllers();
       setDeletingId(null);
       if (paginatedControllers.length === 1 && controllerPage > 1) {
-          setControllerPage(prev => prev - 1);
+        setControllerPage(prev => prev - 1);
       }
     } catch (err) {
       alert("Error deleting controller.")
@@ -206,121 +206,125 @@ export default function Controllers() {
             <tbody className="divide-y divide-slate-800 text-center text-[14px]">
               {paginatedControllers.length > 0 ? (
                 paginatedControllers.map(ctrl => (
-                <tr key={ctrl.id} className="hover:bg-slate-800/30 transition-colors group">
-                  <td className="p-4">
-                    <div className="font-bold text-slate-200">{ctrl.name}</div>
-                    <div className="text-[10px] text-slate-500 uppercase">{ctrl.location}</div>
-                  </td>
-                  <td className="p-4 text-center font-mono text-xs text-slate-400">{ctrl.ip_address}</td>
-                  <td className="p-4 text-center">
-                    <span className="px-2 py-1 bg-slate-800 rounded text-[10px] font-bold text-indigo-400 border border-slate-700">
-                      {ctrl.group?.group_name || "No Group"}
-                    </span>
-                  </td>
-                  <td className="p-4 text-center">
-                  <div className="flex items-center justify-center gap-2 text-slate-400 font-mono text-xs">
-                    <Sun size={14} className="text-amber-500" />
-                    {Math.round((ctrl.main_brightness / 255) * 100)}%
-                  </div>
-                </td>
-                  <td className="p-4 text-center">
-                    <input
-                      type="checkbox"
-                      value={ctrl.led_on}
-                      checked={ctrl.led_on}
-                      readOnly
-                      className="pointer-events-none w-4 h-4 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0 mx-auto"
-                    />
-                  </td>
-                  <td className="p-4 text-center">
-                    <input
-                      type="checkbox"
-                      value={ctrl.is_active}
-                      checked={ctrl.is_active}
-                      readOnly
-                      className="pointer-events-none w-4 h-4 rounded border-slate-700 bg-slate-900 text-emerald-600 focus:ring-0 mx-auto"
-                    />
-                  </td>
-                  <td className="p-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button onClick={() => openModal(ctrl)} className="cursor-pointer p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all">
-                        <Edit3 size={16} />
-                      </button>
-                      <button
-                        onClick={() => setDeletingId(ctrl.id)}
-                        className="cursor-pointer p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                  <tr key={ctrl.id} className="hover:bg-slate-800/30 transition-colors group">
+                    <td className="p-4">
+                      <div className="font-bold text-slate-200">{ctrl.name}</div>
+                      <div className="text-[10px] text-slate-500 uppercase">{ctrl.location}</div>
+                    </td>
+                    <td className="p-4 text-center font-mono text-xs text-slate-400">
+                      <a className="inline-flex items-center gap-1 cursor-pointer hover:text-white hover:bg-indigo-800 hover:font-bold hover:underline hover:rounded transition-all ml-1" href={`http://${ctrl.ip_address}`} target="_blank" rel="noopener noreferrer">
+                        {ctrl.ip_address} <ExternalLink size={12} />
+                      </a>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="px-2 py-1 bg-slate-800 rounded text-[10px] font-bold text-indigo-400 border border-slate-700">
+                        {ctrl.group?.group_name || "No Group"}
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <div className="flex items-center justify-center gap-2 text-slate-400 font-mono text-xs">
+                        <Sun size={14} className="text-amber-500" />
+                        {Math.round((ctrl.main_brightness / 255) * 100)}%
+                      </div>
+                    </td>
+                    <td className="p-4 text-center">
+                      <input
+                        type="checkbox"
+                        value={ctrl.led_on}
+                        checked={ctrl.led_on}
+                        readOnly
+                        className="pointer-events-none w-4 h-4 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0 mx-auto"
+                      />
+                    </td>
+                    <td className="p-4 text-center">
+                      <input
+                        type="checkbox"
+                        value={ctrl.is_active}
+                        checked={ctrl.is_active}
+                        readOnly
+                        className="pointer-events-none w-4 h-4 rounded border-slate-700 bg-slate-900 text-emerald-600 focus:ring-0 mx-auto"
+                      />
+                    </td>
+                    <td className="p-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => openModal(ctrl)} className="cursor-pointer p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all">
+                          <Edit3 size={16} />
+                        </button>
+                        <button
+                          onClick={() => setDeletingId(ctrl.id)}
+                          className="cursor-pointer p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan="7"
+                    className="p-8 text-center text-slate-400 italic text-m bg-slate-600/10 justify-center"
+                  >
+                    {groups.length > 0 ? (
+                      <div>No controllers created.</div>
+                    ) : (
+                      <div>
+                        <p>Please create a group first then create a controller.</p>
+                        <button
+                          onClick={() => window.location.hash = 'settings'}
+                          className="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-lg shadow-indigo-500/20"
+                        >
+                          Go to Groups
+                        </button>
+                      </div>
+                    )}
+
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan="7"
-                  className="p-8 text-center text-slate-400 italic text-m bg-slate-600/10 justify-center"
-                >
-                  {groups.length > 0 ? (
-                    <div>No controllers created.</div>
-                  ) : (
-                    <div>
-                      <p>Please create a group first then create a controller.</p>
-                      <button
-                        onClick={() => window.location.hash = 'settings'}
-                        className="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-lg shadow-indigo-500/20"
-                      >
-                        Go to Groups
-                      </button>
-                    </div>
-                  )}
-
-                </td>
-              </tr>
-            )}
+              )}
             </tbody>
           </table>
         </div>
 
         {/* PAGINATION FOOTER */}
         <div className="bg-slate-900/50 border-t border-slate-800 px-4 py-3 flex items-center justify-between flex-wrap gap-3 text-xs font-bold text-slate-400">
-            <div className="flex items-center gap-2">
-                <span>Rows per page:</span>
-                <select 
-                    value={controllerRowsPerPage} 
-                    onChange={e => { setControllerRowsPerPage(Number(e.target.value)); setControllerPage(1); }}
-                    className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer hover:bg-slate-800/40"
+          <div className="flex items-center gap-2">
+            <span>Rows per page:</span>
+            <select
+              value={controllerRowsPerPage}
+              onChange={e => { setControllerRowsPerPage(Number(e.target.value)); setControllerPage(1); }}
+              className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer hover:bg-slate-800/40"
+            >
+              {[5, 10, 25, 50].map(size =>
+                <option
+                  key={size}
+                  value={size}
+                  className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer"
                 >
-                    {[5, 10, 25, 50].map(size => 
-                    <option
-                        key={size}
-                        value={size}
-                        className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer"
-                    >
-                        {size}
-                    </option>)}
-                </select>
+                  {size}
+                </option>)}
+            </select>
+          </div>
+          <div className="flex items-center gap-4">
+            <span>Page {controllerPage} of {totalControllerPages}</span>
+            <div className="flex gap-1">
+              <button
+                disabled={controllerPage === 1}
+                onClick={() => setControllerPage(prev => prev - 1)}
+                className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                disabled={controllerPage === totalControllerPages}
+                onClick={() => setControllerPage(prev => prev + 1)}
+                className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
+              >
+                <ChevronRight size={16} />
+              </button>
             </div>
-            <div className="flex items-center gap-4">
-                <span>Page {controllerPage} of {totalControllerPages}</span>
-                <div className="flex gap-1">
-                    <button 
-                        disabled={controllerPage === 1}
-                        onClick={() => setControllerPage(prev => prev - 1)}
-                        className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
-                    >
-                        <ChevronLeft size={16} />
-                    </button>
-                    <button 
-                        disabled={controllerPage === totalControllerPages}
-                        onClick={() => setControllerPage(prev => prev + 1)}
-                        className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
-                    >
-                        <ChevronRight size={16} />
-                    </button>
-                </div>
-            </div>
+          </div>
         </div>
       </div>
 
