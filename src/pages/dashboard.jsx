@@ -38,7 +38,7 @@ export default function Dashboard() {
   const formatUptime = (ms) => {
     if (!ms) return "NA";
     const days = Math.floor(ms / 86400);
-    const hours = Math.floor(ms / 3600000);
+    const hours = Math.floor(ms / 3600);
     return `${days}d ${hours}h`;
   };
 
