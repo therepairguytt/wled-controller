@@ -138,38 +138,39 @@ export default function Dashboard() {
 
 
 
-          <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl border border-slate-800/60 overflow-hidden shadow-xl">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-800/30 text-slate-500 uppercase text-[9px] font-black tracking-[0.2em]">
-                <tr className="text-center">
-                  <th className="p-5">Controller</th>
-                  <th className="p-5 text-center">Group</th>
-                  <th className="p-5 text-center">Brightness</th>
-                  <th className="p-5 text-right">Power</th>
+          <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950 shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-center text-sm table-auto min-w-max">
+                <thead className="bg-slate-800/80 text-slate-400 font-bold uppercase text-[13px] tracking-widest select-none">
+                  <tr>
+                  <th className="p-4 text-left">Controller</th>
+                  <th className="p-4 text-center">Group</th>
+                  <th className="p-4 text-center">Brightness</th>
+                  <th className="p-4 text-right">Power</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/40">
+              <tbody className="divide-y divide-slate-800 text-center text-[14px]">
                 {dashboard.controllers.length > 0 ? (
                   dashboard.controllers.map(ctrl => (
-                    <tr key={ctrl.id} className="hover:bg-white/1 transition-colors group text-center">
-                      <td className="p-5">
-                        <div className="font-bold text-slate-100">{ctrl.name}</div>
+                    <tr key={ctrl.id} className="hover:bg-slate-800/30 transition-colors group">
+                      <td className="p-4 text-left">
+                        <div className="font-bold text-slate-200">{ctrl.name}</div>
                         <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold uppercase mt-1">
                           <MapPin size={10} /> {ctrl.location || 'Unknown'}
                         </div>
                       </td>
-                      <td className="p-5 text-center">
-                        <span className="px-2 py-1 bg-slate-800/50 rounded text-[10px] font-bold text-indigo-400 border border-slate-700/50 uppercase">
+                      <td className="p-4 text-center">
+                        <span className="px-2 py-1 bg-slate-800 rounded text-[10px] font-bold text-indigo-400 border border-slate-700 uppercase">
                           {ctrl.group?.group_name || "No Group"}
                         </span>
                       </td>
-                      <td className="p-5 text-center">
+                      <td className="p-4 text-center">
                         <div className="flex items-center justify-center gap-2 text-slate-400 font-mono text-xs">
                           <Sun size={14} className={ctrl.led_on ? "text-amber-500" : "text-slate-700"} />
                           {Math.round((ctrl.main_brightness / 255) * 100)}%
                         </div>
                       </td>
-                      <td className="p-5 text-right">
+                      <td className="p-4 text-right">
                         <button
                           onClick={() => togglePower(ctrl)}
                           disabled={!ctrl.is_online}
@@ -188,7 +189,7 @@ export default function Dashboard() {
                   <tr>
                     <td
                       colSpan="4"
-                      className="p-8 text-center text-slate-400 italic text-m bg-slate-600/10 justify-items-center"
+                      className="p-8 text-center text-slate-400 italic text-m bg-slate-900 justify-items-center"
                     >
                       No controllers found.
                     </td>
@@ -196,6 +197,7 @@ export default function Dashboard() {
                 )}
               </tbody>
             </table>
+            </div>
           </div>
         </>
       )}
