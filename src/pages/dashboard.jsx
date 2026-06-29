@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import api from '../services/api'
-import { Power, Activity, GlobeOff, Wifi, ScrollText, MapPin, Sun } from 'lucide-react'
+import { Power, Activity, GlobeOff, Wifi, ScrollText, MapPin, Sun, RefreshCw } from 'lucide-react'
 
 export default function Dashboard() {
   const [dashboard, setDashboard] = useState(null)
@@ -106,7 +106,22 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-8 w-full animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto p-4 flex-1 overflow-auto">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-indigo-600/20 rounded-lg text-indigo-400">
+            <Activity size={24} />
+          </div>
+          <h1 className="text-2xl font-black text-slate-100 uppercase tracking-tight">Live Dashboard</h1>
+        </div>
+        <button 
+          onClick={load} 
+          className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition-colors"
+        >
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+          REFRESH
+        </button>
+      </div>
       {!dashboard ? (
         <div className="bg-slate-900/60 backdrop-blur-xl border border-rose-500/20 shadow-xl p-12 rounded-3xl text-center">
           <GlobeOff className="mx-auto text-rose-500 mb-4 animate-bounce" size={40} />
@@ -121,10 +136,7 @@ export default function Dashboard() {
             <Tile label="API" value={isApiOnline ? "ONLINE" : "OFFLINE"} color="text-sky-400" icon={<Activity size={14} />} />
           </div>
 
-          <div className="flex justify-between items-end px-1">
-            <h2 className="text-xl font-black text-white tracking-tight uppercase">Live Dashboard</h2>
-            <button onClick={load} className="text-[10px] font-black text-indigo-500 hover:text-indigo-400">REFRESH</button>
-          </div>
+
 
           <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl border border-slate-800/60 overflow-hidden shadow-xl">
             <table className="w-full text-sm text-left">
