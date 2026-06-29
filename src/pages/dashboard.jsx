@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import api from '../services/api'
-import { Power, Activity, GlobeOff, Wifi, ScrollText, MapPin, Sun, RefreshCw, Zap, Play, PlayCircle } from 'lucide-react'
+import { Power, Activity, GlobeOff, Wifi, ScrollText, MapPin, Sun, RefreshCw, Zap, Play, PlayCircle, ExternalLink } from 'lucide-react'
 
 export default function Dashboard() {
   const [dashboard, setDashboard] = useState(null)
@@ -238,7 +238,7 @@ export default function Dashboard() {
                         <td className="p-4 text-center">
                           <div className="font-bold text-slate-200">
                             <a className="cursor-pointer hover:text-white hover:bg-indigo-800 hover:font-bold hover:underline hover:rounded transition-all ml-1" href={`http://${ctrl.ip_address}`} target="_blank" rel="noopener noreferrer">
-                            {ctrl.ip_address}
+                            {ctrl.ip_address} <ExternalLink size={5}/>
                             </a>
                           </div>
                         </td>
