@@ -1,4 +1,7 @@
+import asyncio
+import httpx
 from typing import List
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from sqlalchemy.orm import joinedload
@@ -83,3 +86,37 @@ async def delete_controller(ctrl_id: int):
     )
     await manager.broadcast({"type": "controller_deleted", "ctrl_id": ctrl_id})
     return {"status": "deleted"}
+
+class MasterPowerRequest(BaseModel):
+    on: bool
+
+@router.post("/master-power")
+async def master_power(req: MasterPowerRequest):
+    with Session(engine) as session:
+        controllers = session.exec(select(Controller).where(Controller.is_online == True)).all()
+        
+        async def toggle_one(c):
+            try:
+                async with httpx.AsyncClient() as client:
+                    await client.post(
+                        f"http://{c.ip_address}/json/state",
+                        json={"on": req.on},
+                        timeout=2.0
+                    )
+            except Exception as e:
+                pass
+
+        await asyncio.gather(*[toggle_one(c) for c in controllers])
+        
+        for c in controllers:
+            c.led_on = req.on
+            session.add(c)
+        session.commit()
+        
+    write_log(
+        message=f"Master Power set to {'ON' if req.on else 'OFF'}.",
+        category="controller", action="master_power", level="INFO",
+        target_id=0, target_name="All Controllers"
+    )
+    await manager.broadcast({"type": "master_power_toggle", "on": req.on})
+    return {"status": "success"}
