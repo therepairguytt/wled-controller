@@ -277,7 +277,7 @@ export default function Dashboard() {
                         </td>
                         <td className="p-4 text-center">
                           <td className="p-4 text-center">
-                            <span className="px-2 py-1 bg-slate-800 rounded text-[10px] font-bold text-indigo-400 border border-slate-700 uppercase">
+                            <span className="font-bold text-slate-200">
                               {formatUptime(ctrl.live_data?.info?.uptime)}
                             </span>
                           </td>
