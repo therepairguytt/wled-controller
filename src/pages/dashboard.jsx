@@ -277,7 +277,7 @@ export default function Dashboard() {
                         </td>
                         <td className="p-4 text-center">
                           <div className="font-bold text-slate-200">
-                            {formatUptime(ctrl.live_data?.info?.uptime)}
+                            {formatUptime(ctrl.live_data?.info?.uptime) || "NA"}
                           </div>
                         </td>
                         <td className="p-4 text-center">
