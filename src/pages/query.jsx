@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import api from '../services/api'
-import { Search, Server, Info, Settings, Network, Cpu, Wifi, Activity } from 'lucide-react'
+import { Search, Server, Info, Settings, Network, Cpu, Wifi, Activity, Sun, ClockArrowUp, Mic, Zap } from 'lucide-react'
 
 export default function Query() {
   const [ip, setIp] = useState('')
@@ -67,36 +67,56 @@ export default function Query() {
               </thead>
               <tbody className="divide-y divide-slate-800/50 text-[13px] text-slate-300">
                 <tr className="hover:bg-slate-800/30 transition-colors">
-                  <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><Settings size={14} className="text-slate-500"/> Name</td>
+                  <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><Settings size={14} className="text-slate-500" /> Name</td>
                   <td className="p-4 font-bold text-slate-200">{result.info?.name || result.name || "Unknown"}</td>
                 </tr>
                 <tr className="hover:bg-slate-800/30 transition-colors">
-                  <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><Network size={14} className="text-slate-500"/> MAC Address</td>
-                  <td className="p-4 font-mono text-indigo-300 bg-slate-900/50 rounded px-2 py-1 inline-block mt-2 ml-2">{result.info?.mac || result.mac || "Unknown"}</td>
+                  <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><Network size={14} className="text-slate-500" /> MAC Address</td>
+                  <td className="p-4 font-bold text-slate-200">{result.info?.mac || result.mac || "Unknown"}</td>
                 </tr>
                 <tr className="hover:bg-slate-800/30 transition-colors">
-                  <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><Info size={14} className="text-slate-500"/> Version</td>
-                  <td className="p-4">{result.info?.ver || result.ver || "Unknown"}</td>
+                  <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><Info size={14} className="text-slate-500" /> Version</td>
+                  <td className="p-4 font-bold text-slate-200">{result.info?.ver || result.ver || "Unknown"}</td>
                 </tr>
                 <tr className="hover:bg-slate-800/30 transition-colors">
-                  <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><Activity size={14} className="text-slate-500"/> LED Count</td>
-                  <td className="p-4">{result.info?.leds?.count || 0}</td>
+                  <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><Activity size={14} className="text-slate-500" /> LED Count</td>
+                  <td className="p-4 font-bold text-slate-200">{result.info?.leds?.count || 0}</td>
                 </tr>
                 <tr className="hover:bg-slate-800/30 transition-colors">
-                  <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><Cpu size={14} className="text-slate-500"/> Max Power</td>
-                  <td className="p-4 font-mono text-amber-400">{result.info?.leds?.maxpwr || 0} mA</td>
+                  <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><Zap size={14} className="text-slate-500" /> Max Power</td>
+                  <td className="p-4 font-bold text-slate-200">{result.info?.leds?.maxpwr || 0} mA</td>
                 </tr>
                 <tr className="hover:bg-slate-800/30 transition-colors">
-                  <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><Wifi size={14} className="text-slate-500"/> WiFi Signal</td>
-                  <td className="p-4 flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${(result.info?.wifi?.signal || 0) > 70 ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
-                    {result.info?.wifi?.signal || 0}%
+                  <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><Zap size={14} className="text-slate-500" /> Current Power</td>
+                  <td className="p-4 font-bold text-slate-200">{result.info?.leds?.pwr || 0} mA</td>
+                </tr>
+                <tr className="hover:bg-slate-800/30 transition-colors">
+                  <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><Wifi size={14} className="text-slate-500" /> WiFi Signal</td>
+                  <td className="p-4 font-bold text-slate-200">{result.info?.wifi?.signal || 0}%</td>
+                </tr>
+                <tr className="hover:bg-slate-800/30 transition-colors">
+                  <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><Sun size={14} className="text-slate-500" /> LED Count</td>
+                  <td className="p-4 font-bold text-slate-200">{result.info?.leds?.count || 0}</td>
+                </tr>
+                <tr className="hover:bg-slate-800/30 transition-colors">
+                  <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><ClockArrowUp size={14} className="text-slate-500" /> Uptime</td>
+                  <td className="p-4 font-bold text-slate-200">{result.info?.uptime || 0}</td>
+                </tr>
+                <tr className="hover:bg-slate-800/30 transition-colors">
+                  <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><Mic size={14} className="text-slate-500" /> Audio Reactive</td>
+                  <td className="p-4 font-bold text-slate-200">Sound Processing - {result.info?.u?.["Sound Processing"] || 0}
+                    <div>Audio Source - {result.info?.u?.["Audio Source"]}</div>
+                    <div>UDP Sound Sync - {result.info?.u?.["UDP Sound Sync"]} </div>
                   </td>
+                </tr>
+                <tr className="hover:bg-slate-800/30 transition-colors">
+                  <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><Info size={14} className="text-slate-500" /> Brand</td>
+                  <td className="p-4 font-bold text-slate-200">{result.info?.brand || WLED}</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          
+
           <div className="p-4 bg-slate-800/50 border-y border-slate-800 flex items-center gap-2 text-sm font-bold text-slate-300 uppercase tracking-wider mt-4">
             Raw JSON Output
           </div>
