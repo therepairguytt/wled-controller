@@ -238,8 +238,8 @@ export default function Dashboard() {
                         <td className="p-4 text-center">
                           <div className="font-bold text-slate-200">
                             <a className="cursor-pointer hover:text-white hover:bg-indigo-800 hover:font-bold hover:underline hover:rounded transition-all ml-1" href={`http://${ctrl.ip_address}`} target="_blank" rel="noopener noreferrer">
-                            {ctrl.ip_address} <ExternalLink size={10}/>
-                            </a>
+                            {ctrl.ip_address}
+                            </a> <ExternalLink size={10}/>
                           </div>
                         </td>
                         <td className="p-4 text-center">
