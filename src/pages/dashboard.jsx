@@ -151,11 +151,12 @@ export default function Dashboard() {
           <button onClick={() => toggleMasterPower(false)} className="px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-xl text-xs font-bold transition-colors shadow-[0_0_15px_rgba(244,63,94,0.1)]">ALL OFF</button>
           <button 
             onClick={load} 
-          className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition-colors"
-        >
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          REFRESH
-        </button>
+            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition-colors"
+          >
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            REFRESH
+          </button>
+        </div>
       </div>
       {!dashboard ? (
         <div className="bg-slate-900/60 backdrop-blur-xl border border-rose-500/20 shadow-xl p-12 rounded-3xl text-center">
