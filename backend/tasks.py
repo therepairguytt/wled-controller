@@ -1,10 +1,11 @@
 import asyncio
 import websockets
+import json
 from datetime import timedelta
 from sqlmodel import Session, select
 from backend.database import engine
 from backend.models import Broadcast, PlaylistItem, Preset, Controller, BroadcastSchedule, get_utc_now, ControllerSegment
-from backend.utils import active_broadcast_state, apply_preset_to_wled, manager
+from backend.utils import active_broadcast_state, apply_preset_to_wled, manager, wled_live_data
 from backend.logger import write_log
 
 async def playlist_runner():
@@ -126,8 +127,13 @@ async def controller_health_checker():
                             f"ws://{ctrl.ip_address}/ws",
                             open_timeout=3,
                             close_timeout=2
-                        ):
+                        ) as ws:
                             is_online = True
+                            try:
+                                msg = await asyncio.wait_for(ws.recv(), timeout=2.0)
+                                wled_live_data[ctrl.id] = json.loads(msg)
+                            except Exception:
+                                pass
                     except Exception:
                         is_online = False
 
