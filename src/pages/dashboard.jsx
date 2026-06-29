@@ -216,6 +216,7 @@ export default function Dashboard() {
                 <thead className="bg-slate-800/80 text-slate-400 font-bold uppercase text-[13px] tracking-widest select-none">
                   <tr>
                     <th className="p-4 text-left">Controller</th>
+                    <th className="p-4 text-center">IP Address</th>
                     <th className="p-4 text-center">Group</th>
                     <th className="p-4 text-center">Now Playing</th>
                     <th className="p-4 text-center">Health</th>
@@ -233,6 +234,9 @@ export default function Dashboard() {
                           <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold uppercase mt-1">
                             <MapPin size={10} /> {ctrl.location || 'Unknown'}
                           </div>
+                        </td>
+                        <td className="p-4 text-center">
+                          <div className="font-bold text-slate-200">{ctrl.ip_address}</div>
                         </td>
                         <td className="p-4 text-center">
                           <span className="px-2 py-1 bg-slate-800 rounded text-[10px] font-bold text-indigo-400 border border-slate-700 uppercase">
@@ -290,8 +294,8 @@ export default function Dashboard() {
                             disabled={!ctrl.is_online}
                             className={`p-3 rounded-2xl transition-all ${!ctrl.is_online ? 'opacity-20 cursor-not-allowed bg-slate-800' :
                               ctrl.led_on
-                                ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]'
-                                : 'bg-slate-800 text-slate-500'
+                                ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+                                : 'bg-red-800 text-slate-900'
                               }`}
                           >
                             <Power size={18} strokeWidth={3} />
