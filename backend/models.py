@@ -268,6 +268,7 @@ class ControllerReadWithGroup(SQLModel):
     led_on: bool
     is_active: bool
     is_online: bool
+    live_data: dict = Field(default_factory=dict)
 
 class DashboardControllerWithGroup(SQLModel):
     online: int
