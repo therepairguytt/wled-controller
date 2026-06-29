@@ -13,16 +13,23 @@ def dashboard_data(session: Session = Depends(get_session)):
     controllers = session.exec(statement).all()
 
     response_controllers = []
+    total_power = 0
     for c in controllers:
         c_dict = c.model_dump()
         c_dict["group"] = c.group
-        c_dict["live_data"] = wled_live_data.get(c.id, {})
+        
+        live_data = wled_live_data.get(c.id, {})
+        c_dict["live_data"] = live_data
+        
+        if live_data and "info" in live_data and "leds" in live_data["info"]:
+            total_power += live_data["info"]["leds"].get("pwr", 0)
+            
         response_controllers.append(c_dict)
 
     return {
         "controllers": response_controllers,
         "online": len([c for c in controllers if c.is_online]),
         "offline": len([c for c in controllers if not c.is_online]),
-        "total": len(controllers)
-        
+        "total": len(controllers),
+        "total_power": total_power
     }
