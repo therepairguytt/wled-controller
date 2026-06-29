@@ -236,11 +236,9 @@ export default function Dashboard() {
                           </div>
                         </td>
                         <td className="p-4 text-center">
-                          <div className="font-bold text-slate-200">
-                            <a className="cursor-pointer hover:text-white hover:bg-indigo-800 hover:font-bold hover:underline hover:rounded transition-all ml-1" href={`http://${ctrl.ip_address}`} target="_blank" rel="noopener noreferrer">
-                            {ctrl.ip_address} <ExternalLink size={10}/>
+                            <a className="inline-flex items-center gap-1 cursor-pointer hover:text-white hover:bg-indigo-800 hover:font-bold hover:underline hover:rounded transition-all ml-1 px-1" href={`http://${ctrl.ip_address}`} target="_blank" rel="noopener noreferrer">
+                              {ctrl.ip_address} <ExternalLink size={12}/>
                             </a>
-                          </div>
                         </td>
                         <td className="p-4 text-center">
                           <span className="px-2 py-1 bg-slate-800 rounded text-[10px] font-bold text-indigo-400 border border-slate-700 uppercase">
