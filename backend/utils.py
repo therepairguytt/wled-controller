@@ -25,6 +25,7 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 active_broadcast_state: Dict[int, dict] = {}
+wled_live_data: Dict[int, dict] = {}
 
 def hex_to_rgb(hex_str: str) -> List[int]:
     h = hex_str.lstrip('#')
