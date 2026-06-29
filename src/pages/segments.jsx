@@ -244,7 +244,10 @@ export default function ControllerSegments() {
                   <div className="font-bold text-slate-200">Seg#{ctrl.segment_id}</div>
                   <div className="text-[10px] text-slate-500 uppercase">{ctrl.name}</div>
                 </td>
-                <td className="font-bold text-slate-200">{ctrl.controller_name?.name}</td>
+                <td className="p-4">
+                  <div className="font-bold text-slate-200">{ctrl.controller_name?.name}</div>
+                  <div className="text-[10px] text-slate-500 uppercase">{ctrl.controller_name?.ip_address}</div>
+                  </td>
                 <td className="p-4 text-center">
                   <span className="font-bold text-slate-200">{ctrl.start_led}</span>
                 </td>
