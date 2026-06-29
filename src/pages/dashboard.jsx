@@ -169,7 +169,7 @@ export default function Dashboard() {
             <Tile label="Online" value={dashboard.online} color="text-emerald-400" icon={<Wifi size={14} />} />
             <Tile label="Offline" value={dashboard.offline} color="text-rose-400" icon={<GlobeOff size={14} />} />
             <Tile label="Total" value={dashboard.total} icon={<ScrollText size={14} />} />
-            <Tile label="Network Power" value={`${(dashboard.controllers.reduce((a,c) => a + (c.live_data?.info?.leds?.pwr || 0), 0) / 1000).toFixed(1)}A`} color="text-amber-400" icon={<Zap size={14} />} />
+            <Tile label="Total LED Power" value={`${(dashboard.total_power / 1000).toFixed(1)}A`} color="text-amber-400" icon={<Zap size={14} />} />
             <Tile label="API" value={isApiOnline ? "ONLINE" : "OFFLINE"} color="text-sky-400" icon={<Activity size={14} />} />
           </div>
 
