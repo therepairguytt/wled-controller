@@ -276,11 +276,9 @@ export default function Dashboard() {
                           })()}
                         </td>
                         <td className="p-4 text-center">
-                          <td className="p-4 text-center">
-                            <span className="font-bold text-slate-200">
-                              {formatUptime(ctrl.live_data?.info?.uptime)}
-                            </span>
-                          </td>
+                          <div className="font-bold text-slate-200">
+                            {formatUptime(ctrl.live_data?.info?.uptime)}
+                          </div>
                         </td>
                         <td className="p-4 text-center">
                           <div className="flex items-center justify-center gap-2 text-slate-400 font-mono text-xs">
