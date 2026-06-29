@@ -111,7 +111,7 @@ export default function Query() {
                 </tr>
                 <tr className="hover:bg-slate-800/30 transition-colors">
                   <td className="p-4 font-bold text-slate-400 flex items-center gap-3"><Info size={14} className="text-slate-500" /> Brand</td>
-                  <td className="p-4 font-bold text-slate-200">{result.info?.brand || WLED}</td>
+                  <td className="p-4 font-bold text-slate-200">{result.info?.brand || "WLED"}</td>
                 </tr>
               </tbody>
             </table>
