@@ -212,6 +212,7 @@ export default function Dashboard() {
                   <th className="p-4 text-center">Group</th>
                   <th className="p-4 text-center">Now Playing</th>
                   <th className="p-4 text-center">Health</th>
+                  <th className="p-4 text-center">Uptime</th>
                   <th className="p-4 text-center">Brightness</th>
                   <th className="p-4 text-right">Power</th>
                 </tr>
@@ -262,6 +263,11 @@ export default function Dashboard() {
                             </div>
                           )
                         })()}
+                      </td>
+                      <td className="p-4 text-center">
+                        <span className="px-2 py-1 bg-slate-800 rounded text-[10px] font-bold text-indigo-400 border border-slate-700 uppercase">
+                          {ctrl.live_data?.info?.uptime || "NA"}
+                        </span>
                       </td>
                       <td className="p-4 text-center">
                         <div className="flex items-center justify-center gap-2 text-slate-400 font-mono text-xs">
