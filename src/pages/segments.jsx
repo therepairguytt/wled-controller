@@ -246,7 +246,7 @@ export default function ControllerSegments() {
                 </td>
                 <td className="p-4">
                   <div className="font-bold text-slate-200">{ctrl.controller_name?.name}</div>
-                  <div className="text-[12px] text-slate-500 uppercase">{ctrl.controller_name?.ip_address}</div>
+                  <div className="font-bold text-[12px] text-slate-500 uppercase">{ctrl.controller_name?.ip_address}</div>
                   </td>
                 <td className="p-4 text-center">
                   <span className="font-bold text-slate-200">{ctrl.start_led}</span>
