@@ -294,8 +294,8 @@ export default function Dashboard() {
                             disabled={!ctrl.is_online}
                             className={`p-3 rounded-2xl hover:cursor-pointer transition-all ${!ctrl.is_online ? 'opacity-20 cursor-not-allowed bg-red-800' :
                               ctrl.led_on
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-amber-600 text-slate-900'
+                                ? 'bg-emerald-600 hover:bg-emerald-600/60 text-white'
+                                : 'bg-amber-600 hover:bg-amber-600/60 text-slate-900'
                               }`}
                           >
                             <Power size={18} strokeWidth={3} />
