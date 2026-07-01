@@ -299,7 +299,7 @@ export default function Dashboard() {
                         <td className="p-4 text-right">
                           <button
                             onClick={() => togglePower(ctrl)}
-                            title={togglePowerTitle}
+                            title={"• Item One\n• Item Two\n• Item Three"}
                             disabled={!ctrl.is_online}
                             className={`p-3 rounded-2xl hover:cursor-pointer transition-all ${!ctrl.is_online ? 'opacity-20 cursor-not-allowed bg-red-800' :
                               ctrl.led_on
