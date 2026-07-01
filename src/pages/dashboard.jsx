@@ -291,6 +291,7 @@ export default function Dashboard() {
                         <td className="p-4 text-right">
                           <button
                             onClick={() => togglePower(ctrl)}
+                            title="Green - Device Online & LED's On | Yellow - Device Online & LED's Off | Red - Device Offline"
                             disabled={!ctrl.is_online}
                             className={`p-3 rounded-2xl hover:cursor-pointer transition-all ${!ctrl.is_online ? 'opacity-20 cursor-not-allowed bg-red-800' :
                               ctrl.led_on
