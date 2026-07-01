@@ -154,11 +154,11 @@ export default function Dashboard() {
           <h1 className="text-2xl font-black text-slate-100 uppercase tracking-tight">Live Dashboard</h1>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => toggleMasterPower(true)} className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-xl text-xs font-bold transition-colors shadow-[0_0_15px_rgba(16,185,129,0.1)]">ALL ON</button>
-          <button onClick={() => toggleMasterPower(false)} className="px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-xl text-xs font-bold transition-colors shadow-[0_0_15px_rgba(244,63,94,0.1)]">ALL OFF</button>
+          <button onClick={() => toggleMasterPower(true)} className="px-4 py-2 bg-emerald-500/20 hover:cursor-pointer hover:bg-emerald-500/30 text-emerald-400 rounded-xl text-xs font-bold transition-colors shadow-[0_0_15px_rgba(16,185,129,0.1)]">ALL ON</button>
+          <button onClick={() => toggleMasterPower(false)} className="px-4 py-2 bg-rose-500/20 hover:cursor-pointer hover:bg-rose-500/30 text-rose-400 rounded-xl text-xs font-bold transition-colors shadow-[0_0_15px_rgba(244,63,94,0.1)]">ALL OFF</button>
           <button
             onClick={load}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:cursor-pointer hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition-colors"
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             REFRESH
@@ -292,10 +292,10 @@ export default function Dashboard() {
                           <button
                             onClick={() => togglePower(ctrl)}
                             disabled={!ctrl.is_online}
-                            className={`p-3 rounded-2xl transition-all ${!ctrl.is_online ? 'opacity-20 cursor-not-allowed bg-slate-800' :
+                            className={`p-3 rounded-2xl transition-all ${!ctrl.is_online ? 'opacity-20 hover:cursor-pointer bg-slate-800' :
                               ctrl.led_on
                                 ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]'
-                                : 'bg-red-800 text-slate-900'
+                                : 'bg-red-800 text-slate-900 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
                               }`}
                           >
                             <Power size={18} strokeWidth={3} />
