@@ -134,6 +134,14 @@ export default function Dashboard() {
     }
   }
 
+  const togglePowerTitle = (
+    <ul style={{ margin: 0, paddingLeft: '15px', textAlign: 'left' }}>
+      <li>Green</li>
+      <li>Yellow</li>
+      <li>Red</li>
+    </ul>
+  );
+
   if (loading && !dashboard) {
     return (
       <div className="flex flex-col items-center justify-center h-64">
@@ -291,7 +299,7 @@ export default function Dashboard() {
                         <td className="p-4 text-right">
                           <button
                             onClick={() => togglePower(ctrl)}
-                            title="Green - Device Online & LED's On | Yellow - Device Online & LED's Off | Red - Device Offline"
+                            title={togglePowerTitle}
                             disabled={!ctrl.is_online}
                             className={`p-3 rounded-2xl hover:cursor-pointer transition-all ${!ctrl.is_online ? 'opacity-20 cursor-not-allowed bg-red-800' :
                               ctrl.led_on
