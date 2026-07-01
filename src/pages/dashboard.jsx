@@ -292,10 +292,10 @@ export default function Dashboard() {
                           <button
                             onClick={() => togglePower(ctrl)}
                             disabled={!ctrl.is_online}
-                            className={`p-3 rounded-2xl transition-all ${!ctrl.is_online ? 'opacity-20 hover:cursor-pointer bg-slate-800' :
+                            className={`p-3 rounded-2xl hover:cursor-pointer transition-all ${!ctrl.is_online ? 'opacity-20 cursor-not-allowed bg-red-800' :
                               ctrl.led_on
-                                ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]'
-                                : 'bg-red-800 text-slate-900 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-amber-600 text-slate-900'
                               }`}
                           >
                             <Power size={18} strokeWidth={3} />
