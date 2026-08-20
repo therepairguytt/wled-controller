@@ -87,19 +87,6 @@ npm install
 npm run dev
 ```
 
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Backend API | FastAPI + Uvicorn |
-| Database | PostgreSQL (via SQLModel / psycopg2) |
-| Frontend | React 19 + Vite + Tailwind CSS 4 |
-| Real-time | WebSockets |
-
----
-
 ## License
 
 See [LICENSE](LICENSE) for details.
