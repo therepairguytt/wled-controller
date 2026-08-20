@@ -1,6 +1,6 @@
 # WLED Controller
 
-A web-based dashboard for managing WLED LED controllers — built with FastAPI (Python) + React (Vite) + PostgreSQL.
+A web-based dashboard for managing WLED LED controllers — built with FastAPI (Python) + React (Vite) + PostgreSQL. **NOTE: THIS DASHBOARD WAS BUILT AND TESTED FOR WLED V0.15.4**
 
 ---
 
