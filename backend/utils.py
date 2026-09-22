@@ -112,8 +112,8 @@ async def apply_preset_to_wled(controller, preset, segments=None, effect_only: b
     try:
         async with websockets.connect(
             f"ws://{controller.ip_address}/ws",
-            open_timeout=5,
-            close_timeout=3,
+            open_timeout=10,
+            close_timeout=6,
         ) as ws:
             await ws.send(json.dumps(payload))
             return True
