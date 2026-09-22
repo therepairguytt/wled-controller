@@ -92,8 +92,8 @@ export default function Dashboard() {
       };
 
       socket.onclose = (e) => {
-        console.log("Socket closed. Retry in 3s...", e.reason);
-        setTimeout(connect, 3000);
+        console.log("Socket closed. Retry in 6s...", e.reason);
+        setTimeout(connect, 6000);
       };
 
       socket.onerror = (err) => console.error("Socket error", err);
