@@ -39,7 +39,8 @@ export default function Dashboard() {
     if (!ms) return "NA";
     const days = Math.floor(ms / 86400);
     const hours = Math.floor((ms % 86400) / 3600);
-    return `${days}d ${hours}h`;
+    const secs = Math.floor((ms % 86400) / 36000);
+    return `${days}d ${hours}h ${secs}s`;
   };
 
   useEffect(() => {
