@@ -15,7 +15,8 @@ export default function Controllers() {
     group_id: '',
     main_brightness: 128,
     led_on: true,
-    is_active: true
+    is_active: true,
+    sort_order: 0
   })
 
   useEffect(() => {
@@ -97,7 +98,8 @@ export default function Controllers() {
         group_id: controller.group_id || (groups.length > 0 ? groups[0].id : ''),
         main_brightness: controller.main_brightness,
         led_on: controller.led_on,
-        is_active: controller.is_active
+        is_active: controller.is_active,
+        sort_order: controller.sort_order || 0
       })
     } else {
       setEditingController(null)
@@ -108,7 +110,8 @@ export default function Controllers() {
         group_id: groups.length > 0 ? groups[0].id : '',
         main_brightness: 128,
         led_on: true,
-        is_active: true
+        is_active: true,
+        sort_order: 0
       })
     }
     setIsModalOpen(true)
@@ -126,7 +129,8 @@ export default function Controllers() {
     const payload = {
       ...formData,
       group_id: groupIdInt,
-      main_brightness: parseInt(formData.main_brightness, 10) || 128
+      main_brightness: parseInt(formData.main_brightness, 10) || 128,
+      sort_order: parseInt(formData.sort_order, 10) || 0
     }
 
     try {
@@ -194,6 +198,9 @@ export default function Controllers() {
                 <th onClick={() => handleControllerSortRequest('main_brightness')} className="p-4 text-center cursor-pointer hover:text-white transition-colors">
                   <div className="flex items-center justify-center gap-1">Brightness <SortIndicator currentSort={controllerSort} column="main_brightness" /></div>
                 </th>
+                <th onClick={() => handleControllerSortRequest('sort_order')} className="p-4 text-center cursor-pointer hover:text-white transition-colors">
+                  <div className="flex items-center justify-center gap-1">Sort Order <SortIndicator currentSort={controllerSort} column="sort_order" /></div>
+                </th>
                 <th onClick={() => handleControllerSortRequest('led_on')} className="p-4 text-center cursor-pointer hover:text-white transition-colors">
                   <div className="flex items-center justify-center gap-1">LED On <SortIndicator currentSort={controllerSort} column="led_on" /></div>
                 </th>
@@ -226,6 +233,9 @@ export default function Controllers() {
                         <Sun size={14} className="text-amber-500" />
                         {Math.round((ctrl.main_brightness / 255) * 100)}%
                       </div>
+                    </td>
+                    <td className="p-4 text-center font-mono text-xs font-bold text-indigo-400">
+                      {ctrl.sort_order}
                     </td>
                     <td className="p-4 text-center">
                       <input
@@ -362,6 +372,18 @@ export default function Controllers() {
                   value={formData.ip_address}
                   title="The IP address of the controller device on the network."
                   onChange={e => setFormData({ ...formData, ip_address: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Sort Order</label>
+                <input
+                  type="number"
+                  placeholder='0'
+                  value={formData.sort_order}
+                  title="Used to stagger animations. Controllers with identical sort orders will trigger at the exact same time."
+                  onChange={e => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none"
                 />
               </div>

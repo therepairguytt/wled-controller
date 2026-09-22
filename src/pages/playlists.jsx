@@ -22,7 +22,9 @@ export default function Playlists() {
   const [itemFormData, setItemFormData] = useState({
     preset_id: '',
     sort_order: 1,
-    duration_seconds: 10
+    duration_seconds: 10,
+    controller_delay_ms: 0,
+    segment_delay_ms: 0
   })
 
   // Pagination & Sorting
@@ -120,7 +122,9 @@ export default function Playlists() {
     setItemFormData({
       preset_id: presets[0]?.id || '',
       sort_order: (playlist.items?.length || 0) + 1,
-      duration_seconds: 10
+      duration_seconds: 10,
+      controller_delay_ms: 0,
+      segment_delay_ms: 0
     })
     setIsItemsModalOpen(true)
   }
@@ -161,7 +165,9 @@ export default function Playlists() {
       await api.post(`/api/playlists/${managingPlaylist.id}/items`, {
         preset_id: parseInt(itemFormData.preset_id),
         sort_order: parseInt(itemFormData.sort_order),
-        duration_seconds: parseInt(itemFormData.duration_seconds)
+        duration_seconds: parseInt(itemFormData.duration_seconds),
+        controller_delay_ms: parseInt(itemFormData.controller_delay_ms) || 0,
+        segment_delay_ms: parseInt(itemFormData.segment_delay_ms) || 0
       })
       fetchData()
       setItemFormData({
@@ -380,7 +386,9 @@ export default function Playlists() {
                         <div className="flex-1">
                           <h4 className="text-sm font-bold text-slate-200">{item.preset?.name || `Preset ID: ${item.preset_id}`}</h4>
                           <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 font-mono">
-                            <Clock size={12} /> {item.duration_seconds}s duration
+                            <Clock size={12} /> {item.duration_seconds}s
+                            {item.controller_delay_ms > 0 && <span>| c_delay: {item.controller_delay_ms}ms</span>}
+                            {item.segment_delay_ms > 0 && <span>| s_delay: {item.segment_delay_ms}ms</span>}
                           </div>
                         </div>
                         <button onClick={() => handleDeleteItem(item.id)} className="cursor-pointer p-2 text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100">
@@ -439,6 +447,31 @@ export default function Playlists() {
                       onChange={e => setItemFormData({ ...itemFormData, sort_order: e.target.value })}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none"
                     />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 flex items-center gap-1">Ctrl Delay (ms)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        title="Delay added between controllers based on their sort order."
+                        value={itemFormData.controller_delay_ms}
+                        onChange={e => setItemFormData({ ...itemFormData, controller_delay_ms: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 flex items-center gap-1">Seg Delay (ms)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        title="Delay added between segments based on their sort order."
+                        value={itemFormData.segment_delay_ms}
+                        onChange={e => setItemFormData({ ...itemFormData, segment_delay_ms: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none"
+                      />
+                    </div>
                   </div>
 
                   <div className="pt-4 mt-auto">

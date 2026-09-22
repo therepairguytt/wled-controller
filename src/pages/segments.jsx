@@ -16,10 +16,10 @@ export default function ControllerSegments() {
     stop_led: 200,
     reverse_direction: false,
     mirror_effect: false,
-    offset: 0,
     grouping: 1,
     spacing: 0,
-    seg_bri: 255
+    seg_bri: 255,
+    sort_order: 0
   })
 
   const [segmentSort, setSegmentSort] = useState({ column: 'controller_name', direction: 'asc' });
@@ -120,7 +120,8 @@ export default function ControllerSegments() {
         spacing: segment.spacing,
         reverse_direction: segment.reverse_direction,
         mirror_effect: segment.mirror_effect,
-        seg_bri: segment.seg_bri
+        seg_bri: segment.seg_bri,
+        sort_order: segment.sort_order || 0
       })
     } else {
       setEditingSegment(null)
@@ -136,7 +137,8 @@ export default function ControllerSegments() {
         offset: 0,
         grouping: 1,
         spacing: 0,
-        seg_bri: 255
+        seg_bri: 255,
+        sort_order: 0
       })
     }
     setIsModalOpen(true)
@@ -160,7 +162,8 @@ export default function ControllerSegments() {
       offset: parseInt(formData.offset, 10) || 0,
       grouping: parseInt(formData.grouping, 10) || 1,
       spacing: parseInt(formData.spacing, 10) || 0,
-      seg_bri: parseInt(formData.seg_bri, 10) || 0
+      seg_bri: parseInt(formData.seg_bri, 10) || 0,
+      sort_order: parseInt(formData.sort_order, 10) || 0
     }
 
     try {
@@ -212,6 +215,9 @@ export default function ControllerSegments() {
                 <th onClick={() => handleSegmentSortRequest('controller_name')} className="p-4 text-center cursor-pointer hover:text-white transition-colors">
                   <div className="flex items-center justify-center gap-1">Controller<SortIndicator currentSort={segmentSort} column="controller_name" /></div>
                 </th>
+                <th onClick={() => handleSegmentSortRequest('sort_order')} className="p-4 text-center cursor-pointer hover:text-white transition-colors">
+                  <div className="flex items-center justify-center gap-1">Sort Order<SortIndicator currentSort={segmentSort} column="sort_order" /></div>
+                </th>
                 <th onClick={() => handleSegmentSortRequest('start_led')} className="p-4 text-center cursor-pointer hover:text-white transition-colors">
                   <div className="flex items-center justify-center gap-1">Start LED<SortIndicator currentSort={segmentSort} column="start_led" /></div>
                 </th>
@@ -247,7 +253,10 @@ export default function ControllerSegments() {
                 <td className="p-4">
                   <div className="font-bold text-slate-200">{ctrl.controller_name?.name}</div>
                   <div className="font-bold text-[12px] text-slate-500 uppercase">{ctrl.controller_name?.ip_address}</div>
-                  </td>
+                </td>
+                <td className="p-4 font-mono text-xs font-bold text-indigo-400">
+                  {ctrl.sort_order}
+                </td>
                 <td className="p-4 text-center">
                   <span className="font-bold text-slate-200">{ctrl.start_led}</span>
                 </td>
@@ -410,6 +419,18 @@ export default function ControllerSegments() {
                   title="Segment Name is a user-defined label for this segment to identify it."
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none"
+                />
+              </div>
+
+              <div className="col-span-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Sort Order</label>
+                <input
+                  placeholder='0'
+                  type="number"
+                  title="Used to stagger animations. Lower values trigger first."
+                  value={formData.sort_order}
+                  onChange={e => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none"
                 />
               </div>

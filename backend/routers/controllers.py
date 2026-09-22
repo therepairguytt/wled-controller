@@ -30,7 +30,8 @@ async def add_controller(data: ControllerCreate):
             ip_address=data.ip_address,
             location=data.location,
             group_id=data.group_id,
-            main_brightness=data.main_brightness
+            main_brightness=data.main_brightness,
+            sort_order=data.sort_order
         )
         session.add(ctrl)
         session.commit()

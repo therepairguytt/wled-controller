@@ -30,6 +30,7 @@ class Controller(SQLModel, table=True):
     is_active: bool = True
     is_online: bool = False
     led_on: bool = True
+    sort_order: int = Field(default=0)
     segments: list["ControllerSegment"] = Relationship(back_populates="controller_name")
     created_on: datetime = Field(default_factory=get_utc_now, nullable=False)
     modified_on: datetime = Field(
@@ -45,6 +46,7 @@ class ControllerSegment(SQLModel, table=True):
     controller_id: Optional[int] = Field(default=None, foreign_key="controller.id")
     controller_name: Optional["Controller"] = Relationship(back_populates="segments")
     segment_id: int = 0
+    sort_order: int = Field(default=0)
     start_led: int
     stop_led: int
     offset: int = 0
@@ -101,6 +103,8 @@ class PlaylistItem(SQLModel, table=True):
     preset_id: int = Field(foreign_key="preset.id")
     sort_order: int
     duration_seconds: int = 10
+    controller_delay_ms: int = Field(default=0)
+    segment_delay_ms: int = Field(default=0)
     
     playlist: Optional["Playlist"] = Relationship(back_populates="items")
     preset: Optional["Preset"] = Relationship()
@@ -180,11 +184,13 @@ class ControllerCreate(BaseModel):
     main_brightness: int
     is_active: bool
     led_on: bool
+    sort_order: int = 0
 
 class ControllerSegmentCreate(BaseModel):
     controller_id: int
     name: str
     segment_id: Optional[int] = None
+    sort_order: int = 0
     start_led: int
     stop_led: int
     offset: int
@@ -214,6 +220,8 @@ class PlaylistItemCreate(BaseModel):
     preset_id: int
     sort_order: int
     duration_seconds: int
+    controller_delay_ms: int = 0
+    segment_delay_ms: int = 0
 
 class BroadcastCreate(BaseModel):
     name: str
@@ -268,6 +276,7 @@ class ControllerReadWithGroup(SQLModel):
     led_on: bool
     is_active: bool
     is_online: bool
+    sort_order: int
     live_data: dict = Field(default_factory=dict)
 
 class DashboardControllerWithGroup(SQLModel):
@@ -282,6 +291,7 @@ class ControllerRead(SQLModel):
     ip_address: str
     name: str
     location: str
+    sort_order: int
 
 class ControllerSegmentReadWithName(SQLModel):
     id: int
@@ -289,6 +299,7 @@ class ControllerSegmentReadWithName(SQLModel):
     controller_id: Optional[int] = None
     controller_name: ControllerRead | None = None
     segment_id: int
+    sort_order: int
     start_led: int
     stop_led: int
     offset: int
@@ -357,6 +368,8 @@ class PlaylistItemReadWithPreset(SQLModel):
     preset_id: int
     sort_order: int
     duration_seconds: int
+    controller_delay_ms: int
+    segment_delay_ms: int
     preset: Optional[PresetRead] = None
 
 class PlaylistReadWithItems(SQLModel):

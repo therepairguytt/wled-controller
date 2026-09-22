@@ -55,26 +55,63 @@ async def playlist_runner():
                         ).all())
 
                     if targets:
-                        delay_ms = b.controller_delay_ms if hasattr(b, 'controller_delay_ms') and b.controller_delay_ms else 0
-                        
-                        async def delayed_apply(target_id, preset_id, delay_sec, prev_preset_id):
+                        # Fallback to broadcast's controller delay if item delay is 0
+                        ctrl_delay_ms = target_item.controller_delay_ms if hasattr(target_item, 'controller_delay_ms') and target_item.controller_delay_ms > 0 else (b.controller_delay_ms or 0)
+                        seg_delay_ms = target_item.segment_delay_ms if hasattr(target_item, 'segment_delay_ms') else 0
+
+                        async def delayed_apply_segment(target_id, preset_id, delay_sec, prev_preset_id, segment_ids):
                             if delay_sec > 0:
                                 await asyncio.sleep(delay_sec)
                             with Session(engine) as inner_session:
                                 inner_t = inner_session.get(Controller, target_id)
                                 inner_preset = inner_session.get(Preset, preset_id)
                                 inner_prev_preset = inner_session.get(Preset, prev_preset_id) if prev_preset_id else None
-                                inner_segments = inner_session.exec(select(ControllerSegment).where(ControllerSegment.controller_id == target_id)).all()
+                                
+                                inner_segments = None
+                                if segment_ids:
+                                    inner_segments = inner_session.exec(select(ControllerSegment).where(ControllerSegment.id.in_(segment_ids))).all()
+                                else:
+                                    inner_segments = inner_session.exec(select(ControllerSegment).where(ControllerSegment.controller_id == target_id)).all()
+                                    
                                 if inner_t and inner_preset:
                                     await apply_preset_to_wled(inner_t, inner_preset, inner_segments if inner_segments else None, effect_only=True, previous_preset=inner_prev_preset)
 
-                        for idx, t in enumerate(targets):
-                            target_delay = (delay_ms * idx) / 1000.0
-                            prev_id = previous_preset.id if previous_preset else None
-                            asyncio.create_task(delayed_apply(t.id, target_preset.id, target_delay, prev_id))
+                        # Group controllers by sort_order
+                        sorted_targets = sorted(targets, key=lambda c: c.sort_order)
+                        
+                        ctrl_sort_groups = {}
+                        for t in sorted_targets:
+                            ctrl_sort_groups.setdefault(t.sort_order, []).append(t)
+                            
+                        ctrl_group_idx = 0
+                        for sort_order, group_targets in ctrl_sort_groups.items():
+                            base_delay = (ctrl_delay_ms * ctrl_group_idx) / 1000.0
+                            
+                            for t in group_targets:
+                                segs = session.exec(select(ControllerSegment).where(ControllerSegment.controller_id == t.id)).all()
+                                
+                                if seg_delay_ms > 0 and segs:
+                                    sorted_segs = sorted(segs, key=lambda s: s.sort_order)
+                                    seg_sort_groups = {}
+                                    for s in sorted_segs:
+                                        seg_sort_groups.setdefault(s.sort_order, []).append(s)
+                                        
+                                    seg_group_idx = 0
+                                    for s_order, group_segs in seg_sort_groups.items():
+                                        seg_delay = base_delay + ((seg_delay_ms * seg_group_idx) / 1000.0)
+                                        prev_id = previous_preset.id if previous_preset else None
+                                        seg_ids = [s.id for s in group_segs]
+                                        asyncio.create_task(delayed_apply_segment(t.id, target_preset.id, seg_delay, prev_id, seg_ids))
+                                        seg_group_idx += 1
+                                else:
+                                    prev_id = previous_preset.id if previous_preset else None
+                                    seg_ids = [s.id for s in segs] if segs else None
+                                    asyncio.create_task(delayed_apply_segment(t.id, target_preset.id, base_delay, prev_id, seg_ids))
+                                    
+                            ctrl_group_idx += 1
                             
                         print(f"[Playlist] Broadcast '{b.name}' → preset '{target_preset.name}' "
-                              f"(item {next_idx + 1}/{len(items)}, duration {target_item.duration_seconds}s, delay {delay_ms}ms)")
+                              f"(item {next_idx + 1}/{len(items)}, duration {target_item.duration_seconds}s, c_delay {ctrl_delay_ms}ms, s_delay {seg_delay_ms}ms)")
 
                     # Save state AFTER successful send — use timedelta, not asyncio.to_timedelta
                     active_broadcast_state[b.id] = {

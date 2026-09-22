@@ -36,7 +36,8 @@ async def add_segments(data: ControllerSegmentCreate):
             spacing=data.spacing,
             reverse_direction=data.reverse_direction,
             mirror_effect=data.mirror_effect,
-            seg_bri=data.seg_bri
+            seg_bri=data.seg_bri,
+            sort_order=data.sort_order
         )
 
         session.add(seg)
