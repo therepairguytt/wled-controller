@@ -46,7 +46,7 @@ export default function Dashboard() {
   useEffect(() => {
     let socket;
     const connect = () => {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const protocol = window.location.protocol === 'https:' ? 'ws:' : 'ws:';
       const wsHost = import.meta.env.VITE_API_HOST;
       const wsPort = parseInt(import.meta.env.VITE_API_PORT);
       socket = new WebSocket(`${protocol}//${wsHost}:${wsPort}/ws`);
