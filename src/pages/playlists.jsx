@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import api from '../services/api'
-import { Edit3, Trash2, Plus, X, ListMusic, ListPlus, Clock, Hash } from 'lucide-react'
+import { Edit3, Trash2, Plus, X, ListMusic, ListPlus, Clock, Hash, Play, CheckCircle2 } from 'lucide-react'
 
 export default function Playlists() {
   const [playlists, setPlaylists] = useState([])
@@ -13,6 +13,8 @@ export default function Playlists() {
   const [editingPlaylist, setEditingPlaylist] = useState(null)
   const [managingPlaylist, setManagingPlaylist] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+  const [activatingId, setActivatingId] = useState(null)
+  const [statusMsg, setStatusMsg] = useState(null)
   
   const [formData, setFormData] = useState({
     name: '',
@@ -129,6 +131,19 @@ export default function Playlists() {
     setIsItemsModalOpen(true)
   }
 
+  const handleActivatePlaylist = async (pl) => {
+    setActivatingId(pl.id)
+    try {
+      const res = await api.post(`/api/playlists/${pl.id}/activate`, { target: 'all' })
+      setStatusMsg(res.data?.message || `Started playlist "${pl.name}"`)
+      setTimeout(() => setStatusMsg(null), 4000)
+    } catch (err) {
+      alert("Error starting playlist: " + (err.response?.data?.detail || err.message))
+    } finally {
+      setActivatingId(null)
+    }
+  }
+
   const handleSavePlaylist = async (e) => {
     e.preventDefault()
     try {
@@ -191,11 +206,18 @@ export default function Playlists() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto p-4 flex-1 overflow-auto">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="p-2 bg-indigo-600/20 rounded-lg text-indigo-400">
-            <ListMusic size={24} />
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-2">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-indigo-600/20 rounded-lg text-indigo-400">
+              <ListMusic size={24} />
+          </div>
+          <h1 className="text-2xl font-black text-slate-100 uppercase tracking-tight">Playlists</h1>
         </div>
-        <h1 className="text-2xl font-black text-slate-100 uppercase tracking-tight">Playlists</h1>
+        {statusMsg && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+            <CheckCircle2 size={14} /> {statusMsg}
+          </div>
+        )}
       </div>
 
       <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800/60 p-6 shadow-xl">
@@ -210,7 +232,7 @@ export default function Playlists() {
         </div>
 
         <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950 shadow-xl">
-          <div className="overflow-x-auto">
+          <div className="table-wrapper">
             <table className="w-full text-center text-sm table-auto min-w-max">
               <thead className="bg-slate-800/80 text-slate-400 font-bold uppercase text-[13px] tracking-widest select-none">
                 <tr>
@@ -249,6 +271,14 @@ export default function Playlists() {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => handleActivatePlaylist(pl)}
+                          disabled={activatingId === pl.id || (pl.items?.length || 0) === 0}
+                          className="cursor-pointer px-3 py-1.5 text-xs font-bold bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white rounded-lg transition-all flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                          title="Activate playlist on all controllers"
+                        >
+                          <Play size={12} /> {activatingId === pl.id ? '...' : 'PLAY'}
+                        </button>
                         <button onClick={() => openItemsModal(pl)} className="cursor-pointer px-3 py-1.5 text-xs font-bold bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-600 hover:text-white rounded-lg transition-all flex items-center gap-1">
                           <ListPlus size={14} /> ITEMS
                         </button>

@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import api from '../services/api'
+import { getWebSocketUrl } from '../services/websocket'
 import {
   Radio, Plus, X, Trash2, Edit3, Play, ChevronLeft, ChevronRight,
-  ArrowUpDown, ArrowUp, ArrowDown, CheckCircle, XCircle, Loader,
-  Clock, Server, Users, ListMusic
+  ArrowUpDown, ArrowUp, ArrowDown, CheckCircle, Loader,
+  Clock, Server, Users, ListMusic, Globe
 } from 'lucide-react'
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
 
 const SortIndicator = ({ sort, col }) => {
   if (sort.column !== col) return <ArrowUpDown size={13} className="opacity-30 inline ml-1" />
@@ -15,21 +14,12 @@ const SortIndicator = ({ sort, col }) => {
     : <ArrowDown size={13} className="text-indigo-400 inline ml-1" />
 }
 
-const StatusDot = ({ ok }) =>
-  ok
-    ? <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
-    : <span className="w-2 h-2 rounded-full bg-rose-400 inline-block" />
-
-// ── Main component ────────────────────────────────────────────────────────────
-
 export default function Broadcasts() {
-  // ── data state ──────────────────────────────────────────────────────────────
   const [broadcasts, setBroadcasts]   = useState([])
   const [playlists,  setPlaylists]    = useState([])
   const [controllers,setControllers]  = useState([])
   const [groups,     setGroups]       = useState([])
 
-  // ── modal state ─────────────────────────────────────────────────────────────
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editing,     setEditing]     = useState(null)
   const [deletingId,  setDeletingId]  = useState(null)
@@ -37,7 +27,7 @@ export default function Broadcasts() {
   const defaultForm = {
     name: '',
     playlist_id: '',
-    target_type: 'controller',   // 'controller' | 'group'
+    target_type: 'all',   // 'all' | 'controller' | 'group'
     controller_id: '',
     group_id: '',
     controller_delay_ms: 0,
@@ -45,18 +35,15 @@ export default function Broadcasts() {
   }
   const [form, setForm] = useState(defaultForm)
 
-  // ── pagination / sort ────────────────────────────────────────────────────────
   const [sort,        setSort]        = useState({ column: 'id', direction: 'asc' })
   const [page,        setPage]        = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
 
-  // ── dispatch live-feed ───────────────────────────────────────────────────────
-  const [dispatchLog, setDispatchLog] = useState([])   // array of log entries
-  const [dispatching, setDispatching] = useState(null)  // broadcast id currently dispatching
+  const [dispatchLog, setDispatchLog] = useState([])
+  const [dispatching, setDispatching] = useState(null)
   const [showLog,     setShowLog]     = useState(false)
   const logEndRef = useRef(null)
 
-  // ── WebSocket for live progress ──────────────────────────────────────────────
   const wsRef = useRef(null)
 
   useEffect(() => {
@@ -94,11 +81,7 @@ export default function Broadcasts() {
 
     const connect = () => {
       if (cancelled) return
-      // Read API base from the same env var the rest of the app uses
-      const apiBase = import.meta.env.VITE_API_HOST
-        ? `${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT || 8000}`
-        : `${window.location.hostname}:${import.meta.env.VITE_API_PORT || 8000}`
-      const ws = new WebSocket(`ws://${apiBase}/ws`)
+      const ws = new WebSocket(getWebSocketUrl())
       wsRef.current = ws
       ws.onmessage = handleMessage
       ws.onclose   = () => {
@@ -121,12 +104,10 @@ export default function Broadcasts() {
     }
   }, [])
 
-  // Auto-scroll log
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [dispatchLog])
 
-  // ── fetch ────────────────────────────────────────────────────────────────────
   const fetchAll = useCallback(async () => {
     try {
       const [bRes, plRes, ctRes, grRes] = await Promise.all([
@@ -135,10 +116,10 @@ export default function Broadcasts() {
         api.get('/api/controllers'),
         api.get('/api/groups'),
       ])
-      setBroadcasts(bRes.data)
-      setPlaylists(plRes.data)
-      setControllers(ctRes.data)
-      setGroups(grRes.data)
+      setBroadcasts(bRes.data || [])
+      setPlaylists(plRes.data || [])
+      setControllers(ctRes.data || [])
+      setGroups(grRes.data || [])
     } catch (err) {
       console.error('Failed to load broadcast data', err)
     }
@@ -146,7 +127,6 @@ export default function Broadcasts() {
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
-  // ── sort / paginate ──────────────────────────────────────────────────────────
   const handleSort = (col) => {
     setSort(prev => ({ column: col, direction: prev.column === col && prev.direction === 'asc' ? 'desc' : 'asc' }))
     setPage(1)
@@ -167,14 +147,13 @@ export default function Broadcasts() {
   const totalPages      = Math.ceil(sorted.length / rowsPerPage) || 1
   const paginated       = useMemo(() => sorted.slice((page - 1) * rowsPerPage, page * rowsPerPage), [sorted, page, rowsPerPage])
 
-  // ── modal open / close ───────────────────────────────────────────────────────
   const openModal = (b = null) => {
     if (b) {
       setEditing(b)
       setForm({
         name:                b.name,
         playlist_id:         b.playlist_id,
-        target_type:         b.controller_id ? 'controller' : 'group',
+        target_type:         b.controller_id ? 'controller' : b.group_id ? 'group' : 'all',
         controller_id:       b.controller_id || '',
         group_id:            b.group_id || '',
         controller_delay_ms: b.controller_delay_ms,
@@ -187,15 +166,14 @@ export default function Broadcasts() {
     setIsModalOpen(true)
   }
 
-  // ── save ─────────────────────────────────────────────────────────────────────
   const handleSave = async (e) => {
     e.preventDefault()
     const payload = {
       name:                form.name,
-      playlist_id:         parseInt(form.playlist_id),
-      controller_id:       form.target_type === 'controller' ? parseInt(form.controller_id) || null : null,
-      group_id:            form.target_type === 'group'      ? parseInt(form.group_id)      || null : null,
-      controller_delay_ms: parseInt(form.controller_delay_ms) || 0,
+      playlist_id:         parseInt(form.playlist_id, 10),
+      controller_id:       form.target_type === 'controller' ? parseInt(form.controller_id, 10) || null : null,
+      group_id:            form.target_type === 'group'      ? parseInt(form.group_id, 10)      || null : null,
+      controller_delay_ms: parseInt(form.controller_delay_ms, 10) || 0,
       is_active:           form.is_active,
     }
     try {
@@ -211,7 +189,6 @@ export default function Broadcasts() {
     }
   }
 
-  // ── delete ───────────────────────────────────────────────────────────────────
   const handleDelete = async (id) => {
     try {
       await api.delete(`/api/broadcasts/${id}`)
@@ -222,7 +199,6 @@ export default function Broadcasts() {
     }
   }
 
-  // ── dispatch ─────────────────────────────────────────────────────────────────
   const handleDispatch = async (id) => {
     try {
       setDispatchLog([])
@@ -239,17 +215,14 @@ export default function Broadcasts() {
     }
   }
 
-  // ── toggle ───────────────────────────────────────────────────────────────────
   const handleToggle = async (id) => {
     await api.post(`/api/broadcasts/${id}/toggle`)
     fetchAll()
   }
 
-  // ── render ────────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto p-4 flex-1 overflow-auto">
 
-      {/* Header */}
       <div className="flex items-center gap-3 mb-2">
         <div className="p-2 bg-indigo-600/20 rounded-lg text-indigo-400">
           <Radio size={24} />
@@ -257,7 +230,6 @@ export default function Broadcasts() {
         <h1 className="text-2xl font-black text-slate-100 uppercase tracking-tight">Broadcasts</h1>
       </div>
 
-      {/* Live Dispatch Log */}
       {showLog && (
         <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
           <div className="flex items-center justify-between px-5 py-3 bg-slate-900 border-b border-slate-800">
@@ -294,7 +266,6 @@ export default function Broadcasts() {
         </div>
       )}
 
-      {/* Table card */}
       <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800/60 p-6 shadow-xl">
         <div className="flex justify-between pb-4 items-baseline">
           <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Saved Broadcasts</h3>
@@ -307,9 +278,9 @@ export default function Broadcasts() {
         </div>
 
         <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950 shadow-xl">
-          <div className="overflow-x-auto">
+          <div className="table-wrapper">
             <table className="w-full text-center text-sm table-auto min-w-max">
-              <thead className="bg-slate-800/80 text-slate-400 font-bold uppercase text-[13px] tracking-widest select-none">
+              <thead className="bg-slate-800/95 text-slate-400 font-bold uppercase text-[13px] tracking-widest select-none">
                 <tr>
                   <th onClick={() => handleSort('id')}             className="p-4 cursor-pointer hover:text-white">ID <SortIndicator sort={sort} col="id" /></th>
                   <th onClick={() => handleSort('name')}           className="p-4 cursor-pointer hover:text-white text-left">Name <SortIndicator sort={sort} col="name" /></th>
@@ -337,8 +308,10 @@ export default function Broadcasts() {
                       <div className="flex items-center justify-center gap-1 text-slate-300">
                         {b.target_type === 'controller'
                           ? <Server size={12} className="text-cyan-400 shrink-0" />
-                          : <Users  size={12} className="text-amber-400 shrink-0" />}
-                        {b.target_name || 'All'}
+                          : b.target_type === 'group'
+                            ? <Users size={12} className="text-amber-400 shrink-0" />
+                            : <Globe size={12} className="text-emerald-400 shrink-0" />}
+                        {b.target_name || 'All Active Controllers'}
                       </div>
                     </td>
                     <td className="p-4 font-mono text-slate-400 text-xs">
@@ -358,7 +331,6 @@ export default function Broadcasts() {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end items-center gap-2">
-                        {/* Dispatch */}
                         <button
                           onClick={() => handleDispatch(b.id)}
                           disabled={dispatching === b.id}
@@ -389,7 +361,6 @@ export default function Broadcasts() {
             </table>
           </div>
 
-          {/* Pagination */}
           <div className="bg-slate-900/50 border-t border-slate-800 px-4 py-3 flex items-center justify-between flex-wrap gap-3 text-xs font-bold text-slate-400">
             <div className="flex items-center gap-2">
               <span>Rows per page:</span>
@@ -412,7 +383,6 @@ export default function Broadcasts() {
         </div>
       </div>
 
-      {/* ── Create / Edit Modal ─────────────────────────────────────────────── */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
@@ -428,8 +398,6 @@ export default function Broadcasts() {
             </div>
 
             <div className="p-6 space-y-5 overflow-y-auto flex-1">
-
-              {/* Name */}
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Broadcast Name</label>
                 <input
@@ -441,7 +409,6 @@ export default function Broadcasts() {
                 />
               </div>
 
-              {/* Playlist */}
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 flex items-center gap-1"><ListMusic size={11} /> Playlist</label>
                 <select
@@ -455,29 +422,31 @@ export default function Broadcasts() {
                 </select>
               </div>
 
-              {/* Target type toggle */}
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Send To</label>
                 <div className="flex gap-2 mt-1">
-                  {['controller', 'group'].map(t => (
+                  {[
+                    { id: 'all', label: 'All Controllers', icon: <Globe size={12} className="inline mr-1" /> },
+                    { id: 'group', label: 'Group', icon: <Users size={12} className="inline mr-1" /> },
+                    { id: 'controller', label: 'Controller', icon: <Server size={12} className="inline mr-1" /> },
+                  ].map(t => (
                     <button
-                      key={t}
+                      key={t.id}
                       type="button"
-                      onClick={() => setForm({ ...form, target_type: t, controller_id: '', group_id: '' })}
+                      onClick={() => setForm({ ...form, target_type: t.id, controller_id: '', group_id: '' })}
                       className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-widest cursor-pointer transition-all border ${
-                        form.target_type === t
+                        form.target_type === t.id
                           ? 'bg-indigo-600 text-white border-indigo-500'
                           : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-600'
                       }`}
                     >
-                      {t === 'controller' ? <><Server size={12} className="inline mr-1" />Controller</> : <><Users size={12} className="inline mr-1" />Group</>}
+                      {t.icon}{t.label}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Controller or Group selector */}
-              {form.target_type === 'controller' ? (
+              {form.target_type === 'controller' && (
                 <div>
                   <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Controller</label>
                   <select
@@ -490,7 +459,9 @@ export default function Broadcasts() {
                     {controllers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.ip_address})</option>)}
                   </select>
                 </div>
-              ) : (
+              )}
+
+              {form.target_type === 'group' && (
                 <div>
                   <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Group</label>
                   <select
@@ -505,7 +476,6 @@ export default function Broadcasts() {
                 </div>
               )}
 
-              {/* Delay */}
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 flex items-center gap-1">
                   <Clock size={11} /> Inter-Controller Delay (ms)
@@ -524,11 +494,10 @@ export default function Broadcasts() {
                 </p>
               </div>
 
-              {/* Active toggle */}
               <div className="flex items-center justify-between bg-slate-950/50 p-4 rounded-xl border border-slate-800">
                 <div>
                   <span className="text-sm font-bold text-slate-200">Active</span>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-widest">Include in scheduled playback</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-widest">Include in background playlist playback</p>
                 </div>
                 <input
                   type="checkbox"
@@ -548,10 +517,9 @@ export default function Broadcasts() {
         </div>
       )}
 
-      {/* ── Delete Confirmation ──────────────────────────────────────────────── */}
       {deletingId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md" onClick={() => setDeletingId(null)} />
+          <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm" onClick={() => setDeletingId(null)} />
           <div className="relative bg-slate-900 border border-rose-500/20 w-full max-w-sm rounded-3xl p-8 shadow-2xl text-center">
             <div className="bg-rose-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
               <Trash2 className="text-rose-500" size={32} />

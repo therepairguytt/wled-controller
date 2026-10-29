@@ -12,7 +12,7 @@ export default function Settings() {
   const [groupsRowsPerPage, setGroupsRowsPerPage] = useState(10)
   const [groupsDeletingID, setGroupsDeletingID] = useState(null)
   const [isGroupsModalOpen, setIsGroupsModalOpen] = useState(false)
-  const [editingGroups, setEditingGroups] = useState([null])
+  const [editingGroups, setEditingGroups] = useState(null)
   const groupBeingDeleted = groups.find(g => g.id === groupsDeletingID)
 
   const fetchData = useCallback(async () => {
@@ -23,6 +23,9 @@ export default function Settings() {
       ]);
       setGroups(groupRes.data);
       setControllers(ctrlRes.data);
+      if (ctrlRes.data.length > 0) {
+        setSelectedControllerId(prev => prev || String(ctrlRes.data[0].id));
+      }
     } catch (err) {
       console.error("Failed to sync settings data", err);
     }
@@ -100,7 +103,7 @@ export default function Settings() {
       fetchData()
       setIsGroupsModalOpen(false)
     } catch (err) {
-      alert("Error saving group info: " + (err.response?.data?.detail?.[0]?.msg || err.msg))
+      alert("Error saving group info: " + (err.response?.data?.detail?.[0]?.msg || err.response?.data?.detail || err.message))
     }
   };
 
@@ -115,7 +118,7 @@ export default function Settings() {
     } catch (err) {
       const errorMessage = err.response?.data?.detail
         ? (typeof err.response.data.detail === 'string' ? err.response.data.detail : JSON.stringify(err.response.data.detail))
-        : "An unexpected error occured."
+        : "An unexpected error occurred."
       alert(`Failed to delete: ${errorMessage}`);
     }
   };
@@ -161,7 +164,7 @@ export default function Settings() {
               id="restartController"
             >
               {controllers.length === 0 ? (
-                <option value="">Create a controler first!</option>
+                <option value="">Create a controller first!</option>
               ) : (
                 controllers.map((ctrl) => (
                   <option key={ctrl.id} value={ctrl.id}>
@@ -201,48 +204,50 @@ export default function Settings() {
         </div>
 
         <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950">
-          <table className="w-full text-center text-sm">
-            <thead className="bg-slate-800/80 text-slate-400 font-bold uppercase text-[13px] tracking-widest">
-              <tr>
-                <th onClick={() => handleGroupsSortRequest('id')} className="p-4 cursor-pointer hover:bg-slate-700/80 hover:text-white transition-colors">
-                  <div className="flex items-center justify-center gap-2">ID<SortIndicator currentSort={groupsSort} column="id" /></div>
-                </th>
-                <th onClick={() => handleGroupsSortRequest('group_name')} className="p-4 cursor-pointer hover:bg-slate-700/80 hover:text-white transition-colors">
-                  <div className="flex items-center justify-center gap-2">Name<SortIndicator currentSort={groupsSort} column="group_name" /></div>
-                </th>
-                <th className="p-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800 text-center text-[14px]">
-              {paginatedGroups.length > 0 ? (
-                paginatedGroups.map(groups => (
-                  <tr key={groups.id} className="hover:bg-slate-800/50 transition-colors">
-                    <td className="text-slate-200 font-mono p-4">{groups.id}</td>
-                    <td className="text-slate-200 font-mono p-4">{groups.group_name}</td>
-                    <td className="p-2 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => groupsModal(groups)} className="cursor-pointer p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all">
-                          <Edit3 size={16} />
-                        </button>
-                        <button
-                          onClick={() => setGroupsDeletingID(groups.id)}
-                          className="cursor-pointer text-rose-500 hover:bg-rose-500/10 p-2 rounded-lg transition-all"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+          <div className="table-wrapper">
+            <table className="w-full text-center text-sm">
+              <thead className="bg-slate-800/80 text-slate-400 font-bold uppercase text-[13px] tracking-widest">
+                <tr>
+                  <th onClick={() => handleGroupsSortRequest('id')} className="p-4 cursor-pointer hover:bg-slate-700/80 hover:text-white transition-colors">
+                    <div className="flex items-center justify-center gap-2">ID<SortIndicator currentSort={groupsSort} column="id" /></div>
+                  </th>
+                  <th onClick={() => handleGroupsSortRequest('group_name')} className="p-4 cursor-pointer hover:bg-slate-700/80 hover:text-white transition-colors">
+                    <div className="flex items-center justify-center gap-2">Name<SortIndicator currentSort={groupsSort} column="group_name" /></div>
+                  </th>
+                  <th className="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800 text-center text-[14px]">
+                {paginatedGroups.length > 0 ? (
+                  paginatedGroups.map(groups => (
+                    <tr key={groups.id} className="hover:bg-slate-800/50 transition-colors">
+                      <td className="text-slate-200 font-mono p-4">{groups.id}</td>
+                      <td className="text-slate-200 font-mono p-4">{groups.group_name}</td>
+                      <td className="p-2 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => groupsModal(groups)} className="cursor-pointer p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all">
+                            <Edit3 size={16} />
+                          </button>
+                          <button
+                            onClick={() => setGroupsDeletingID(groups.id)}
+                            className="cursor-pointer text-rose-500 hover:bg-rose-500/10 p-2 rounded-lg transition-all"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="3" className="p-8 text-center text-slate-600 italic text-xs">
+                      No Groups Defined.
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="3" className="p-8 text-center text-slate-600 italic text-xs">
-                    No Groups Defined.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
 
           {/* Groups Pagination */}
           <div className="bg-slate-800/80 border-t border-slate-900 px-4 py-3 flex items-center justify-between flex-wrap gap-3 text-xs font-bold text-slate-400">
@@ -316,8 +321,8 @@ export default function Settings() {
                 <div className="bg-rose-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Trash2 className="text-rose-500" size={32} />
                 </div>
-                <h2 className="text-xl font-black text-white uppercase tracking-tight">Confirm Deletion of Group {groupBeingDeleted.group_name}</h2>
-                <p className="text-slate-400 text-sm mt-3">This will permanently remove the group {groupBeingDeleted.group_name} from your system. Please ensure no controllers are assigned to this group!</p>
+                <h2 className="text-xl font-black text-white uppercase tracking-tight">Confirm Deletion of Group {groupBeingDeleted?.group_name}</h2>
+                <p className="text-slate-400 text-sm mt-3">This will permanently remove the group {groupBeingDeleted?.group_name} from your system. Please ensure no controllers are assigned to this group!</p>
                 <div className="flex gap-3 mt-8">
                   <button type="button" onClick={() => setGroupsDeletingID(null)} className="flex-1 bg-slate-800 text-slate-300 font-bold py-3 rounded-xl cursor-pointer">CANCEL</button>
                   <button type="button" onClick={() => groupsDelete(groupsDeletingID)} className="flex-1 bg-rose-600 text-white font-bold py-3 rounded-xl cursor-pointer">DELETE GROUP</button>

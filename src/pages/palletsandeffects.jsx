@@ -1,16 +1,20 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
-import { Trash2, Plus, Zap, Edit3, X, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+    Trash2, Plus, Zap, Edit3, X, ArrowUpDown, ArrowUp, ArrowDown,
+    ChevronLeft, ChevronRight, RefreshCw, Search, CheckCircle
+} from 'lucide-react';
 
 export default function PalletsEffects() {
     const [palettes, setPalettes] = useState([])
     const [isPalettesModalOpen, setIsPalettesModalOpen] = useState(false)
-    const [editingPalettes, setEditingPalettes] = useState([])
+    const [editingPalettes, setEditingPalettes] = useState(null)
     const [palettesDeletingId, setPalettesDeletingId] = useState(null)
     const [palettesData, setPalettesData] = useState({
         palettes_id: "",
         name: ""
     })
+    const [paletteSearch, setPaletteSearch] = useState("")
 
     const [paletteSort, setPaletteSort] = useState({ column: 'palettes_id', direction: 'asc' });
     const [palettePage, setPalettePage] = useState(1);
@@ -18,31 +22,90 @@ export default function PalletsEffects() {
 
     const [effects, setEffects] = useState([])
     const [isEffectsModalOpen, setIsEffectsModalOpen] = useState(false)
-    const [editingEffects, setEditingEffects] = useState([])
+    const [editingEffects, setEditingEffects] = useState(null)
     const [effectsDeletingId, setEffectsDeletingId] = useState(null)
     const [effectsData, setEffectsData] = useState({
         effect_id: "",
         name: ""
     })
+    const [effectSearch, setEffectSearch] = useState("")
 
     const [effectSort, setEffectSort] = useState({ column: 'effect_id', direction: 'asc' });
     const [effectPage, setEffectPage] = useState(1);
     const [effectRowsPerPage, setEffectRowsPerPage] = useState(10);
 
+    // WLED 0.16.1 Live Controller Sync state
+    const [controllers, setControllers] = useState([])
+    const [syncControllerId, setSyncControllerId] = useState("")
+    const [syncing, setSyncing] = useState(false)
+    const [syncMessage, setSyncMessage] = useState(null)
+
     const fetchData = useCallback(async () => {
         try {
-            const [palettesRes, effectsRes] = await Promise.all([
+            const [palettesRes, effectsRes, ctrlsRes] = await Promise.all([
                 api.get('/api/palettes'),
-                api.get('/api/effects')
+                api.get('/api/effects'),
+                api.get('/api/controllers').catch(() => ({ data: [] })),
             ]);
-            setPalettes(palettesRes.data);
-            setEffects(effectsRes.data);
+            setPalettes(palettesRes.data || []);
+            setEffects(effectsRes.data || []);
+            const ctrls = ctrlsRes.data || [];
+            setControllers(ctrls);
+            if (ctrls.length > 0 && !syncControllerId) {
+                setSyncControllerId(String(ctrls[0].id));
+            }
         } catch (err) {
             console.error("Failed to sync effects or palettes data", err);
         }
-    }, []);
+    }, [syncControllerId]);
 
     useEffect(() => { fetchData() }, [fetchData])
+
+    const handleSyncFromDevice = async (mode) => {
+        if (!syncControllerId) {
+            alert("Please select a controller to sync from.");
+            return;
+        }
+        setSyncing(true);
+        setSyncMessage(null);
+        try {
+            if (mode === 'effects') {
+                const res = await api.post(`/api/effects/sync/${syncControllerId}`);
+                setSyncMessage(`Synced ${res.data.total} effects (${res.data.added} new, ${res.data.updated} updated).`);
+            } else if (mode === 'palettes') {
+                const res = await api.post(`/api/palettes/sync/${syncControllerId}`);
+                setSyncMessage(`Synced ${res.data.total} palettes (${res.data.added} new, ${res.data.updated} updated).`);
+            } else {
+                const [eRes, pRes] = await Promise.all([
+                    api.post(`/api/effects/sync/${syncControllerId}`),
+                    api.post(`/api/palettes/sync/${syncControllerId}`),
+                ]);
+                setSyncMessage(`Synced ${eRes.data.total} effects & ${pRes.data.total} palettes from controller.`);
+            }
+            fetchData();
+        } catch (err) {
+            alert("Sync failed: " + (err.response?.data?.detail || err.message));
+        } finally {
+            setSyncing(false);
+        }
+    };
+
+    const handleSeedDefaults = async () => {
+        setSyncing(true);
+        setSyncMessage(null);
+        try {
+            const [eRes, pRes] = await Promise.all([
+                api.post('/api/effects/seed-defaults'),
+                api.post('/api/palettes/seed-defaults'),
+            ]);
+            setSyncMessage(`Restored WLED 0.16.1 defaults (${eRes.data.total} effects, ${pRes.data.total} palettes).`);
+            fetchData();
+        } catch (err) {
+            alert("Failed to restore defaults: " + (err.response?.data?.detail || err.message));
+        } finally {
+            setSyncing(false);
+        }
+    };
 
     const handlePaletteSortRequest = (column) => {
         let direction = 'asc';
@@ -63,9 +126,12 @@ export default function PalletsEffects() {
     };
 
     const sortedPalettes = useMemo(() => {
-        const sortableItems = [...palettes];
+        const q = paletteSearch.trim().toLowerCase();
+        const filtered = q
+            ? palettes.filter(p => p.name.toLowerCase().includes(q) || String(p.palettes_id).includes(q))
+            : [...palettes];
         if (paletteSort.column !== null) {
-            sortableItems.sort((a, b) => {
+            filtered.sort((a, b) => {
                 let aVal = a[paletteSort.column];
                 let bVal = b[paletteSort.column];
 
@@ -80,13 +146,16 @@ export default function PalletsEffects() {
                 return 0;
             });
         }
-        return sortableItems;
-    }, [palettes, paletteSort]);
+        return filtered;
+    }, [palettes, paletteSort, paletteSearch]);
 
     const sortedEffects = useMemo(() => {
-        const sortableItems = [...effects];
+        const q = effectSearch.trim().toLowerCase();
+        const filtered = q
+            ? effects.filter(e => e.name.toLowerCase().includes(q) || String(e.effect_id).includes(q))
+            : [...effects];
         if (effectSort.column !== null) {
-            sortableItems.sort((a, b) => {
+            filtered.sort((a, b) => {
                 let aVal = a[effectSort.column];
                 let bVal = b[effectSort.column];
 
@@ -101,8 +170,8 @@ export default function PalletsEffects() {
                 return 0;
             });
         }
-        return sortableItems;
-    }, [effects, effectSort]);
+        return filtered;
+    }, [effects, effectSort, effectSearch]);
 
     const totalPalettePages = Math.ceil(sortedPalettes.length / paletteRowsPerPage) || 1;
     const paginatedPalettes = useMemo(() => {
@@ -118,17 +187,17 @@ export default function PalletsEffects() {
 
     const SortIndicator = ({ currentSort, column }) => {
         if (currentSort.column !== column) return <ArrowUpDown size={14} className="opacity-40" />;
-        return currentSort.direction === 'asc' 
-            ? <ArrowUp size={14} className="text-indigo-400" /> 
+        return currentSort.direction === 'asc'
+            ? <ArrowUp size={14} className="text-indigo-400" />
             : <ArrowDown size={14} className="text-indigo-400" />;
     };
 
-    const palettesModal = (palettes = null) => {
-        if (palettes) {
-            setEditingPalettes(palettes)
+    const palettesModal = (pal = null) => {
+        if (pal) {
+            setEditingPalettes(pal)
             setPalettesData({
-                palettes_id: palettes.palettes_id,
-                name: palettes.name
+                palettes_id: pal.palettes_id,
+                name: pal.name
             })
         } else {
             setEditingPalettes(null)
@@ -144,7 +213,7 @@ export default function PalletsEffects() {
         e.preventDefault()
         const paletteIdInt = parseInt(palettesData.palettes_id, 10)
         if (isNaN(paletteIdInt)) {
-            alert("Please select or create a valid playlist!")
+            alert("Please enter a valid palette ID!")
             return
         }
         const payload = { ...palettesData, palettes_id: paletteIdInt }
@@ -178,12 +247,12 @@ export default function PalletsEffects() {
         }
     };
 
-    const effectsModal = (effects = null) => {
-        if (effects) {
-            setEditingEffects(effects)
+    const effectsModal = (eff = null) => {
+        if (eff) {
+            setEditingEffects(eff)
             setEffectsData({
-                effect_id: effects.effect_id,
-                name: effects.name
+                effect_id: eff.effect_id,
+                name: eff.name
             })
         } else {
             setEditingEffects(null)
@@ -199,7 +268,7 @@ export default function PalletsEffects() {
         e.preventDefault()
         const effectsIdInt = parseInt(effectsData.effect_id, 10)
         if (isNaN(effectsIdInt)) {
-            alert("Please select or create a valid effect!")
+            alert("Please enter a valid effect ID!")
             return
         }
         const payload = { ...effectsData, effect_id: effectsIdInt }
@@ -239,94 +308,157 @@ export default function PalletsEffects() {
                 <div className="p-2 bg-indigo-600/20 rounded-lg text-indigo-400">
                     <Zap size={24} />
                 </div>
-                <h1 className="text-2xl font-black text-slate-100 uppercase tracking-tight">Palettes & Effects</h1>
+                <div>
+                    <h1 className="text-2xl font-black text-slate-100 uppercase tracking-tight">Palettes & Effects</h1>
+                    <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+                        {effects.length} Effects • {palettes.length} Palettes (WLED 0.16.1)
+                    </p>
+                </div>
             </div>
 
-            {/* Pallet Management Section */}
+            {/* WLED 0.16.1 Live Sync Banner */}
+            <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800/60 p-5 shadow-xl">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div>
+                        <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest">
+                            WLED 0.16.1 Live Controller Sync (/json/eff & /json/pal)
+                        </h3>
+                        <p className="text-xs text-slate-400 mt-1">
+                            Pull built-in, particle system, usermod effects, and custom palettes directly from an online WLED device.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
+                        <select
+                            value={syncControllerId}
+                            onChange={e => setSyncControllerId(e.target.value)}
+                            className="bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none"
+                        >
+                            {controllers.length === 0 ? (
+                                <option value="">No controllers added</option>
+                            ) : (
+                                controllers.map(c => (
+                                    <option key={c.id} value={c.id}>{c.name} ({c.ip_address})</option>
+                                ))
+                            )}
+                        </select>
+                        <button
+                            onClick={() => handleSyncFromDevice('both')}
+                            disabled={syncing || !syncControllerId}
+                            className="cursor-pointer bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all"
+                        >
+                            <RefreshCw size={14} className={syncing ? "animate-spin" : ""} /> SYNC FROM DEVICE
+                        </button>
+                        <button
+                            onClick={handleSeedDefaults}
+                            disabled={syncing}
+                            className="cursor-pointer bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 text-xs font-bold px-3 py-2.5 rounded-xl transition-all"
+                        >
+                            RESTORE 0.16.1 DEFAULTS
+                        </button>
+                    </div>
+                </div>
+                {syncMessage && (
+                    <div className="mt-3 flex items-center gap-2 text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 rounded-xl">
+                        <CheckCircle size={14} /> {syncMessage}
+                    </div>
+                )}
+            </div>
+
+            {/* Palette Management Section */}
             <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800/60 p-6 shadow-xl">
-                <div className="flex justify-between pb-4 items-baseline">
-                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Palette Management</h3>
-                    <button
-                        onClick={() => palettesModal()}
-                        className="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-indigo-500/20"
-                    >
-                        <Plus size={16} /> CREATE PALETTE
-                    </button>
+                <div className="flex justify-between pb-4 items-center flex-wrap gap-3">
+                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                        Palette Management ({sortedPalettes.length})
+                    </h3>
+                    <div className="flex items-center gap-2">
+                        <div className="relative">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                            <input
+                                value={paletteSearch}
+                                onChange={e => { setPaletteSearch(e.target.value); setPalettePage(1); }}
+                                placeholder="Search palettes..."
+                                className="bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-200 outline-none focus:border-indigo-500"
+                            />
+                        </div>
+                        <button
+                            onClick={() => palettesModal()}
+                            className="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-indigo-500/20"
+                        >
+                            <Plus size={16} /> CREATE PALETTE
+                        </button>
+                    </div>
                 </div>
                 <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950">
-                    <table className="w-full text-center text-sm table-auto">
-                        <thead className="bg-slate-800/80 text-slate-400 font-bold uppercase text-[13px] tracking-widest">
-                            <tr>
-                                <th onClick={() => handlePaletteSortRequest('palettes_id')} className="p-4 cursor-pointer hover:bg-slate-700/80 hover:text-white transition-colors">
-                                    <div className="flex items-center justify-center gap-2">Palette ID <SortIndicator currentSort={paletteSort} column="palettes_id" /></div>
-                                </th>
-                                <th onClick={() => handlePaletteSortRequest('name')} className="p-4 cursor-pointer hover:bg-slate-700/80 hover:text-white transition-colors">
-                                    <div className="flex items-center justify-center gap-2">Palette name <SortIndicator currentSort={paletteSort} column="name" /></div>
-                                </th>
-                                <th className="p-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-800 text-center text-[14px]">
-                            {paginatedPalettes.length > 0 ? (
-                                paginatedPalettes.map(pal => (
-                                    <tr key={pal.id} className="hover:bg-slate-800/50 transition-colors">
-                                        <td className="text-slate-200 font-mono p-4">{pal.palettes_id}</td>
-                                        <td className="text-slate-200 font-mono p-4">{pal.name}</td>
-                                        <td className="p-2 text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <button onClick={() => palettesModal(pal)} className="cursor-pointer p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all">
-                                                    <Edit3 size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => setPalettesDeletingId(pal.id)}
-                                                    className="cursor-pointer text-rose-500 hover:bg-rose-500/10 p-2 rounded-lg transition-all"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
+                    <div className="table-wrapper">
+                        <table className="w-full text-center text-sm table-auto">
+                            <thead className="bg-slate-800/95 text-slate-400 font-bold uppercase text-[13px] tracking-widest">
+                                <tr>
+                                    <th onClick={() => handlePaletteSortRequest('palettes_id')} className="p-4 cursor-pointer hover:bg-slate-700/80 hover:text-white transition-colors">
+                                        <div className="flex items-center justify-center gap-2">Palette ID <SortIndicator currentSort={paletteSort} column="palettes_id" /></div>
+                                    </th>
+                                    <th onClick={() => handlePaletteSortRequest('name')} className="p-4 cursor-pointer hover:bg-slate-700/80 hover:text-white transition-colors">
+                                        <div className="flex items-center justify-center gap-2">Palette name <SortIndicator currentSort={paletteSort} column="name" /></div>
+                                    </th>
+                                    <th className="p-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-800 text-center text-[14px]">
+                                {paginatedPalettes.length > 0 ? (
+                                    paginatedPalettes.map(pal => (
+                                        <tr key={pal.id} className="hover:bg-slate-800/50 transition-colors">
+                                            <td className="text-slate-200 font-mono p-4">{pal.palettes_id}</td>
+                                            <td className="text-slate-200 font-mono p-4">{pal.name}</td>
+                                            <td className="p-2 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <button onClick={() => palettesModal(pal)} className="cursor-pointer p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all">
+                                                        <Edit3 size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setPalettesDeletingId(pal.id)}
+                                                        className="cursor-pointer text-rose-500 hover:bg-rose-500/10 p-2 rounded-lg transition-all"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="3" className="p-8 text-center text-slate-600 italic text-xs">
+                                            No Palettes Found.
                                         </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="3" className="p-8 text-center text-slate-600 italic text-xs">
-                                        No Palettes Defined.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
 
-                    {/* PALETTE PAGINATION FOOTER CONTROL */}
                     <div className="bg-slate-900/50 border-t border-slate-800 px-4 py-3 flex items-center justify-between flex-wrap gap-3 text-xs font-bold text-slate-400">
                         <div className="flex items-center gap-2">
                             <span>Rows per page:</span>
-                            <select 
-                                value={paletteRowsPerPage} 
+                            <select
+                                value={paletteRowsPerPage}
                                 onChange={e => { setPaletteRowsPerPage(Number(e.target.value)); setPalettePage(1); }}
                                 className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer hover:bg-slate-800/40"
                             >
-                                {[5, 10, 25, 50].map(size => 
-                                <option
-                                key={size}
-                                value={size}
-                                className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer"
-                                >
-                                    {size}
-                                </option>)}
+                                {[5, 10, 25, 50].map(size =>
+                                    <option key={size} value={size} className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer">
+                                        {size}
+                                    </option>)}
                             </select>
                         </div>
                         <div className="flex items-center gap-4">
                             <span>Page {palettePage} of {totalPalettePages}</span>
                             <div className="flex gap-1">
-                                <button 
+                                <button
                                     disabled={palettePage === 1}
                                     onClick={() => setPalettePage(prev => prev - 1)}
                                     className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
                                 >
                                     <ChevronLeft size={16} />
                                 </button>
-                                <button 
+                                <button
                                     disabled={palettePage === totalPalettePages}
                                     onClick={() => setPalettePage(prev => prev + 1)}
                                     className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
@@ -338,7 +470,6 @@ export default function PalletsEffects() {
                     </div>
                 </div>
 
-                {/* Palettes Modals */}
                 {isPalettesModalOpen && (
                     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
                         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setIsPalettesModalOpen(false)} />
@@ -355,7 +486,7 @@ export default function PalletsEffects() {
                                     <input
                                         required
                                         type="number"
-                                        placeholder='255'
+                                        placeholder="71"
                                         value={palettesData.palettes_id}
                                         onChange={e => setPalettesData({ ...palettesData, palettes_id: e.target.value })}
                                         className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none"
@@ -365,7 +496,7 @@ export default function PalletsEffects() {
                                     <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Palette Name</label>
                                     <input
                                         required
-                                        placeholder='Custom Palette'
+                                        placeholder="Custom Palette"
                                         value={palettesData.name}
                                         onChange={e => setPalettesData({ ...palettesData, name: e.target.value })}
                                         className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none transition-all"
@@ -401,89 +532,99 @@ export default function PalletsEffects() {
 
             {/* Effects Management Section */}
             <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800/60 p-6 shadow-xl">
-                <div className="flex justify-between pb-4 items-baseline">
-                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Effects Management</h3>
-                    <button
-                        onClick={() => effectsModal()}
-                        className="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-indigo-500/20"
-                    >
-                        <Plus size={16} /> CREATE EFFECT
-                    </button>
+                <div className="flex justify-between pb-4 items-center flex-wrap gap-3">
+                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                        Effects Management ({sortedEffects.length})
+                    </h3>
+                    <div className="flex items-center gap-2">
+                        <div className="relative">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                            <input
+                                value={effectSearch}
+                                onChange={e => { setEffectSearch(e.target.value); setEffectPage(1); }}
+                                placeholder="Search effects..."
+                                className="bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-200 outline-none focus:border-indigo-500"
+                            />
+                        </div>
+                        <button
+                            onClick={() => effectsModal()}
+                            className="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-indigo-500/20"
+                        >
+                            <Plus size={16} /> CREATE EFFECT
+                        </button>
+                    </div>
                 </div>
                 <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950">
-                    <table className="w-full text-center text-sm table-auto">
-                        <thead className="bg-slate-700/50 text-slate-400 font-bold uppercase text-[13px] tracking-widest select-none">
-                            <tr>
-                                <th onClick={() => handleEffectSortRequest('effect_id')} className="p-4 cursor-pointer hover:bg-slate-700/80 hover:text-white transition-colors">
-                                    <div className="flex items-center justify-center gap-2">Effect ID <SortIndicator currentSort={effectSort} column="effect_id" /></div>
-                                </th>
-                                <th onClick={() => handleEffectSortRequest('name')} className="p-4 cursor-pointer hover:bg-slate-700/80 hover:text-white transition-colors">
-                                    <div className="flex items-center justify-center gap-2">Effect name <SortIndicator currentSort={effectSort} column="name" /></div>
-                                </th>
-                                <th className="p-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-800 text-center text-[14px]">
-                            {paginatedEffects.length > 0 ? (
-                                paginatedEffects.map(efft => (
-                                    <tr key={efft.id} className="hover:bg-slate-800/50 transition-colors">
-                                        <td className="text-slate-200 font-mono p-4">{efft.effect_id}</td>
-                                        <td className="text-slate-200 font-mono p-4">{efft.name}</td>
-                                        <td className="p-2 text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <button onClick={() => effectsModal(efft)} className="cursor-pointer p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all">
-                                                    <Edit3 size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => setEffectsDeletingId(efft.id)}
-                                                    className="cursor-pointer text-rose-500 hover:bg-rose-500/10 p-2 rounded-lg transition-all"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
+                    <div className="table-wrapper">
+                        <table className="w-full text-center text-sm table-auto">
+                            <thead className="bg-slate-800/95 text-slate-400 font-bold uppercase text-[13px] tracking-widest select-none">
+                                <tr>
+                                    <th onClick={() => handleEffectSortRequest('effect_id')} className="p-4 cursor-pointer hover:bg-slate-700/80 hover:text-white transition-colors">
+                                        <div className="flex items-center justify-center gap-2">Effect ID <SortIndicator currentSort={effectSort} column="effect_id" /></div>
+                                    </th>
+                                    <th onClick={() => handleEffectSortRequest('name')} className="p-4 cursor-pointer hover:bg-slate-700/80 hover:text-white transition-colors">
+                                        <div className="flex items-center justify-center gap-2">Effect name <SortIndicator currentSort={effectSort} column="name" /></div>
+                                    </th>
+                                    <th className="p-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-800 text-center text-[14px]">
+                                {paginatedEffects.length > 0 ? (
+                                    paginatedEffects.map(efft => (
+                                        <tr key={efft.id} className="hover:bg-slate-800/50 transition-colors">
+                                            <td className="text-slate-200 font-mono p-4">{efft.effect_id}</td>
+                                            <td className="text-slate-200 font-mono p-4">{efft.name}</td>
+                                            <td className="p-2 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <button onClick={() => effectsModal(efft)} className="cursor-pointer p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all">
+                                                        <Edit3 size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setEffectsDeletingId(efft.id)}
+                                                        className="cursor-pointer text-rose-500 hover:bg-rose-500/10 p-2 rounded-lg transition-all"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="3" className="p-8 text-center text-slate-600 italic text-xs">
+                                            No Effects Found.
                                         </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="3" className="p-8 text-center text-slate-600 italic text-xs">
-                                        No Effects Defined.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
 
-                    {/* EFFECT PAGINATION FOOTER CONTROL */}
                     <div className="bg-slate-900/50 border-t border-slate-800 px-4 py-3 flex items-center justify-between flex-wrap gap-3 text-xs font-bold text-slate-400">
                         <div className="flex items-center gap-2">
                             <span>Rows per page:</span>
-                            <select 
-                                value={effectRowsPerPage} 
+                            <select
+                                value={effectRowsPerPage}
                                 onChange={e => { setEffectRowsPerPage(Number(e.target.value)); setEffectPage(1); }}
                                 className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer hover:bg-slate-800/40"
                             >
                                 {[5, 10, 25, 50].map(size =>
-                                <option
-                                    key={size}
-                                    value={size}
-                                    className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none"
-                                >
-                                    {size}
-                                </option>)}
+                                    <option key={size} value={size} className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none">
+                                        {size}
+                                    </option>)}
                             </select>
                         </div>
                         <div className="flex items-center gap-4">
                             <span>Page {effectPage} of {totalEffectPages}</span>
                             <div className="flex gap-1">
-                                <button 
+                                <button
                                     disabled={effectPage === 1}
                                     onClick={() => setEffectPage(prev => prev - 1)}
                                     className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
                                 >
                                     <ChevronLeft size={16} />
                                 </button>
-                                <button 
+                                <button
                                     disabled={effectPage === totalEffectPages}
                                     onClick={() => setEffectPage(prev => prev + 1)}
                                     className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
@@ -495,7 +636,6 @@ export default function PalletsEffects() {
                     </div>
                 </div>
 
-                {/* Effects Modals */}
                 {isEffectsModalOpen && (
                     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
                         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setIsEffectsModalOpen(false)} />
@@ -512,7 +652,7 @@ export default function PalletsEffects() {
                                     <input
                                         required
                                         type="number"
-                                        placeholder='140'
+                                        placeholder="220"
                                         value={effectsData.effect_id}
                                         onChange={e => setEffectsData({ ...effectsData, effect_id: e.target.value })}
                                         className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none"
@@ -522,7 +662,7 @@ export default function PalletsEffects() {
                                     <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Effect Name</label>
                                     <input
                                         required
-                                        placeholder='Custom Effect'
+                                        placeholder="Custom Effect"
                                         value={effectsData.name}
                                         onChange={e => setEffectsData({ ...effectsData, name: e.target.value })}
                                         className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1 text-slate-200 focus:border-indigo-500 outline-none transition-all"
