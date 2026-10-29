@@ -1,6 +1,16 @@
 # WLED Controller
 
-A web-based dashboard for managing WLED LED controllers — built with FastAPI (Python) + React (Vite) + PostgreSQL. **NOTE: THIS DASHBOARD WAS BUILT AND TESTED FOR WLED V0.15.4**
+A web-based dashboard for managing WLED LED controllers — built with FastAPI (Python) + React (Vite) + PostgreSQL. **NOTE: BUILT AND OPTIMIZED FOR WLED v0.16.1 (v16.0.1)**
+
+---
+
+## WLED v0.16.1 Highlights
+
+- **Full WLED v0.16.1 Effect & Palette Registry**: Includes all 220 built-in effects (`0`–`219`, including 1D/2D Particle System effects `PS Volcano` through `Slow Transition`) and 71 palettes (`0`–`70`).
+- **Live Controller Sync**: Pull custom or usermod effects (`/json/eff`) and palettes (`/json/pal`) directly from any online WLED v0.16.1 device into your database.
+- **Expanded Segment & Preset Parameters**: Configure custom effect parameters (`c1`, `c2`, `c3`), White Color Temperature (`cct`), Layer Blend Modes (`bm`, modes `0`–`14`), and Segment Freeze (`frz`).
+- **Broadcast Schedules**: Automated time-window and weekday scheduler for controller and group broadcasts.
+- **Dashboard Quick Actions**: One-click preset application and playlist activation across all controllers, specific groups, or individual nodes.
 
 ---
 

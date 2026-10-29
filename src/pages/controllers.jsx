@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import api from '../services/api'
-import { Edit3, Trash2, Plus, X, Server, Lightbulb, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Sun, ExternalLink } from 'lucide-react'
+import { Edit3, Trash2, Plus, X, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Sun, ExternalLink } from 'lucide-react'
 
 export default function Controllers() {
   const [controllers, setControllers] = useState([])
@@ -58,7 +58,7 @@ export default function Controllers() {
         let aVal = controllerSort.column === 'group_name' ? a.group?.group_name : a[controllerSort.column];
         let bVal = controllerSort.column === 'group_name' ? b.group?.group_name : b[controllerSort.column];
 
-        if (['id', 'main_brightness'].includes(controllerSort.column)) {
+        if (['id', 'main_brightness', 'sort_order'].includes(controllerSort.column)) {
           return controllerSort.direction === 'asc' ? (aVal || 0) - (bVal || 0) : (bVal || 0) - (aVal || 0);
         }
         if (['led_on', 'is_active'].includes(controllerSort.column)) {
@@ -182,7 +182,7 @@ export default function Controllers() {
       </div>
 
       <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950 shadow-xl">
-        <div className="overflow-x-auto">
+        <div className="table-wrapper">
           <table className="w-full text-center text-sm table-auto min-w-max">
             <thead className="bg-slate-800/80 text-slate-400 font-bold uppercase text-[13px] tracking-widest select-none">
               <tr>
@@ -214,7 +214,7 @@ export default function Controllers() {
               {paginatedControllers.length > 0 ? (
                 paginatedControllers.map(ctrl => (
                   <tr key={ctrl.id} className="hover:bg-slate-800/30 transition-colors group">
-                    <td className="p-4">
+                    <td className="p-4 text-left">
                       <div className="font-bold text-slate-200">{ctrl.name}</div>
                       <div className="text-[10px] text-slate-500 uppercase">{ctrl.location}</div>
                     </td>
@@ -273,7 +273,7 @@ export default function Controllers() {
               ) : (
                 <tr>
                   <td
-                    colSpan="7"
+                    colSpan="8"
                     className="p-8 text-center text-slate-400 italic text-m bg-slate-600/10 justify-center"
                   >
                     {groups.length > 0 ? (

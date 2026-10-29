@@ -15,7 +15,26 @@ from backend.wled_seed_data import WLED_EFFECTS, WLED_PALETTES
 from backend.utils import manager
 from backend.tasks import playlist_runner, broadcast_scheduler, controller_health_checker
 
-from backend.routers import controllers, groups, broadcasts, dashboard, segments, palettes, effects, functions, health, system, logs, presets, playlists, discovery
+from backend.routers import (
+    controllers, groups, broadcasts, dashboard, segments,
+    palettes, effects, functions, health, system, logs,
+    presets, playlists, discovery, schedules
+)
+
+MIGRATIONS = [
+    "ALTER TABLE broadcast ADD COLUMN IF NOT EXISTS controller_delay_ms INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE preset ADD COLUMN IF NOT EXISTS reverse_direction BOOLEAN NOT NULL DEFAULT 0",
+    "ALTER TABLE preset ADD COLUMN IF NOT EXISTS custom1 INTEGER NOT NULL DEFAULT 128",
+    "ALTER TABLE preset ADD COLUMN IF NOT EXISTS custom2 INTEGER NOT NULL DEFAULT 128",
+    "ALTER TABLE preset ADD COLUMN IF NOT EXISTS custom3 INTEGER NOT NULL DEFAULT 16",
+    "ALTER TABLE preset ADD COLUMN IF NOT EXISTS cct INTEGER NOT NULL DEFAULT 127",
+    "ALTER TABLE preset ADD COLUMN IF NOT EXISTS freeze BOOLEAN NOT NULL DEFAULT 0",
+    "ALTER TABLE preset ADD COLUMN IF NOT EXISTS blend_mode INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE controllersegment ADD COLUMN IF NOT EXISTS freeze BOOLEAN NOT NULL DEFAULT 0",
+    "ALTER TABLE controllersegment ADD COLUMN IF NOT EXISTS blend_mode INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE controllersegment ADD COLUMN IF NOT EXISTS cct INTEGER NOT NULL DEFAULT 127",
+]
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -23,31 +42,34 @@ async def lifespan(app: FastAPI):
 
     # ── Safe column migrations (add any new columns that may not exist yet) ──
     with engine.connect() as conn:
-        # broadcast.controller_delay_ms (added in v26.6)
-        try:
-            conn.execute(text(
-                "ALTER TABLE broadcast ADD COLUMN IF NOT EXISTS controller_delay_ms INTEGER NOT NULL DEFAULT 0"
-            ))
-            conn.commit()
-        except Exception:
-            pass  # SQLite fallback or column already exists
+        for sql in MIGRATIONS:
+            try:
+                conn.execute(text(sql))
+                conn.commit()
+            except Exception:
+                # Fallback for SQLite syntax without IF NOT EXISTS or column already exists
+                try:
+                    sqlite_sql = sql.replace(" IF NOT EXISTS", "")
+                    conn.execute(text(sqlite_sql))
+                    conn.commit()
+                except Exception:
+                    pass
 
-        # preset.reverse_direction
-        try:
-            conn.execute(text(
-                "ALTER TABLE preset ADD COLUMN reverse_direction BOOLEAN NOT NULL DEFAULT 0"
-            ))
-            conn.commit()
-        except Exception:
-            pass
-
+    # ── Seed / upgrade WLED 0.16.1 Effects and Palettes ──
     with Session(engine) as session:
-        if session.exec(select(WLEDEffects)).first() is None:
-            for eff_id, name in WLED_EFFECTS.items():
+        existing_effects = {e.effect_id: e for e in session.exec(select(WLEDEffects)).all()}
+        for eff_id, name in WLED_EFFECTS.items():
+            if eff_id not in existing_effects:
                 session.add(WLEDEffects(effect_id=eff_id, name=name))
-        if session.exec(select(WLEDPalettes)).first() is None:
-            for pal_id, name in WLED_PALETTES.items():
+            elif existing_effects[eff_id].name == "RSVD" and name != "RSVD":
+                existing_effects[eff_id].name = name
+                session.add(existing_effects[eff_id])
+
+        existing_palettes = {p.palettes_id: p for p in session.exec(select(WLEDPalettes)).all()}
+        for pal_id, name in WLED_PALETTES.items():
+            if pal_id not in existing_palettes:
                 session.add(WLEDPalettes(palettes_id=pal_id, name=name))
+
         session.commit()
 
     p_task = asyncio.create_task(playlist_runner())
@@ -58,7 +80,8 @@ async def lifespan(app: FastAPI):
     s_task.cancel()
     h_task.cancel()
 
-app = FastAPI(lifespan=lifespan)
+
+app = FastAPI(title="WLED Controller API (WLED 0.16.1)", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -66,19 +89,22 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
             await websocket.receive_text()
-    except:
+    except Exception:
         manager.disconnect(websocket)
+
 
 # Include Routers
 app.include_router(controllers.router)
 app.include_router(groups.router)
 app.include_router(broadcasts.router)
+app.include_router(schedules.router)
 app.include_router(dashboard.router)
 app.include_router(functions.router)
 app.include_router(segments.router)
