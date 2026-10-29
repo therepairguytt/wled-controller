@@ -4,11 +4,11 @@ import tailwindcss from '@tailwindcss/vite'
 import { readFileSync } from 'fs'
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd());
-  const apiHost = env.VITE_API_HOST; 
-  const apiPort = parseInt(env.VITE_API_PORT);
-  const appHost = env.VITE_APP_HOST;
-  const appPort = parseInt(env.VITE_APP_PORT);
+  const env = loadEnv(mode, process.cwd(), '');
+  const apiHost = env.VITE_API_HOST || '127.0.0.1';
+  const apiPort = parseInt(env.VITE_API_PORT) || 8000;
+  const appHost = env.VITE_APP_HOST || '127.0.0.1';
+  const appPort = parseInt(env.VITE_APP_PORT) || 3030;
   const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
   return {
@@ -22,8 +22,8 @@ export default defineConfig(({ mode }) => {
     },
 
     server: {
-      host: env.VITE_APP_HOST || '0.0.0.0', 
-      port: parseInt(env.VITE_APP_PORT) || 3030,
+      host: appHost,
+      port: appPort,
       
       proxy: {
         '/api': {
