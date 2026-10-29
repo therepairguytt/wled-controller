@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import api from '../services/api'
-import { ScrollText, RefreshCw, Trash2, Wifi, WifiOff, Plus, Pencil, Trash, Zap, Power, RotateCcw, AlertTriangle, CheckCircle, Info, XCircle } from 'lucide-react'
+import { ScrollText, RefreshCw, Trash2, Wifi, WifiOff, Plus, Pencil, Trash, Zap, Power, RotateCcw, AlertTriangle, CheckCircle, Info, XCircle, Radio, Calendar, Sliders, ListMusic, Play } from 'lucide-react'
 
 const LEVEL_CONFIG = {
   SUCCESS: { color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', icon: <CheckCircle size={13} /> },
@@ -13,6 +13,10 @@ const CATEGORY_CONFIG = {
   controller: { label: 'Controller', icon: <Wifi size={12} />, color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
   group: { label: 'Group', icon: <ScrollText size={12} />, color: 'text-violet-400 bg-violet-500/10 border-violet-500/20' },
   segment: { label: 'Segment', icon: <Zap size={12} />, color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' },
+  preset: { label: 'Preset', icon: <Sliders size={12} />, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+  playlist: { label: 'Playlist', icon: <ListMusic size={12} />, color: 'text-pink-400 bg-pink-500/10 border-pink-500/20' },
+  broadcast: { label: 'Broadcast', icon: <Radio size={12} />, color: 'text-sky-400 bg-sky-500/10 border-sky-500/20' },
+  schedule: { label: 'Schedule', icon: <Calendar size={12} />, color: 'text-teal-400 bg-teal-500/10 border-teal-500/20' },
   power: { label: 'Power', icon: <Power size={12} />, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
   system: { label: 'System', icon: <RotateCcw size={12} />, color: 'text-slate-400 bg-slate-500/10 border-slate-500/20' },
 }
@@ -25,6 +29,8 @@ const ACTION_ICON = {
   offline: <WifiOff size={12} />,
   toggled: <Power size={12} />,
   rebooted: <RotateCcw size={12} />,
+  dispatched: <Play size={12} />,
+  synced: <RefreshCw size={12} />,
 }
 
 function formatTime(isoString) {
