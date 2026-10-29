@@ -27,46 +27,46 @@ export default function ControllerSegments() {
   const [segmentRowsPerPage, setSegmentRowsPerPage] = useState(10);
 
   const handleSegmentSortRequest = (column) => {
-      let direction = 'asc';
-      if (segmentSort.column === column && segmentSort.direction === 'asc') {
-          direction = 'desc';
-      }
-      setSegmentSort({ column, direction });
-      setSegmentPage(1);
+    let direction = 'asc';
+    if (segmentSort.column === column && segmentSort.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSegmentSort({ column, direction });
+    setSegmentPage(1);
   };
 
   const sortedSegments = useMemo(() => {
-      const sortableItems = [...segment];
-      if (segmentSort.column !== null) {
-          sortableItems.sort((a, b) => {
-              let aVal = segmentSort.column === 'controller_name' ? a.controller_name?.name : a[segmentSort.column];
-              let bVal = segmentSort.column === 'controller_name' ? b.controller_name?.name : b[segmentSort.column];
+    const sortableItems = [...segment];
+    if (segmentSort.column !== null) {
+      sortableItems.sort((a, b) => {
+        let aVal = segmentSort.column === 'controller_name' ? a.controller_name?.name : a[segmentSort.column];
+        let bVal = segmentSort.column === 'controller_name' ? b.controller_name?.name : b[segmentSort.column];
 
-              if (['segment_id', 'start_led', 'stop_led', 'seg_bri', 'offset', 'grouping', 'spacing'].includes(segmentSort.column)) {
-                  return segmentSort.direction === 'asc' ? aVal - bVal : bVal - aVal;
-              }
+        if (['segment_id', 'start_led', 'stop_led', 'seg_bri', 'offset', 'grouping', 'spacing'].includes(segmentSort.column)) {
+          return segmentSort.direction === 'asc' ? aVal - bVal : bVal - aVal;
+        }
 
-              aVal = aVal?.toString().toLowerCase() || '';
-              bVal = bVal?.toString().toLowerCase() || '';
-              if (aVal < bVal) return segmentSort.direction === 'asc' ? -1 : 1;
-              if (aVal > bVal) return segmentSort.direction === 'asc' ? 1 : -1;
-              return 0;
-          });
-      }
-      return sortableItems;
+        aVal = aVal?.toString().toLowerCase() || '';
+        bVal = bVal?.toString().toLowerCase() || '';
+        if (aVal < bVal) return segmentSort.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return segmentSort.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return sortableItems;
   }, [segment, segmentSort]);
 
   const totalSegmentPages = Math.ceil(sortedSegments.length / segmentRowsPerPage) || 1;
   const paginatedSegments = useMemo(() => {
-      const startIndex = (segmentPage - 1) * segmentRowsPerPage;
-      return sortedSegments.slice(startIndex, startIndex + segmentRowsPerPage);
+    const startIndex = (segmentPage - 1) * segmentRowsPerPage;
+    return sortedSegments.slice(startIndex, startIndex + segmentRowsPerPage);
   }, [sortedSegments, segmentPage, segmentRowsPerPage]);
 
   const SortIndicator = ({ currentSort, column }) => {
-      if (currentSort.column !== column) return <ArrowUpDown size={14} className="opacity-40 inline" />;
-      return currentSort.direction === 'asc' 
-          ? <ArrowUp size={14} className="text-indigo-400 inline" /> 
-          : <ArrowDown size={14} className="text-indigo-400 inline" />;
+    if (currentSort.column !== column) return <ArrowUpDown size={14} className="opacity-40 inline" />;
+    return currentSort.direction === 'asc'
+      ? <ArrowUp size={14} className="text-indigo-400 inline" />
+      : <ArrowDown size={14} className="text-indigo-400 inline" />;
   };
 
   useEffect(() => {
@@ -185,7 +185,7 @@ export default function ControllerSegments() {
       fetchSegment();
       setDeletingId(null);
       if (paginatedSegments.length === 1 && segmentPage > 1) {
-          setSegmentPage(prev => prev - 1);
+        setSegmentPage(prev => prev - 1);
       }
     } catch (err) {
       alert("Error deleting segment.")
@@ -244,117 +244,141 @@ export default function ControllerSegments() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800 text-center text-[14px]">
-              {paginatedSegments.map(ctrl => (
-              <tr key={ctrl.id} className="hover:bg-slate-800/30 transition-colors group">
-                <td className="p-4">
-                  <div className="font-bold text-slate-200">Seg#{ctrl.segment_id}</div>
-                  <div className="text-[10px] text-slate-500 uppercase">{ctrl.name}</div>
-                </td>
-                <td className="p-4">
-                  <div className="font-bold text-slate-200">{ctrl.controller_name?.name}</div>
-                  <div className="font-bold text-[12px] text-slate-500 uppercase">{ctrl.controller_name?.ip_address}</div>
-                </td>
-                <td className="p-4 font-mono text-xs font-bold text-indigo-400">
-                  {ctrl.sort_order}
-                </td>
-                <td className="p-4 text-center">
-                  <span className="font-bold text-slate-200">{ctrl.start_led}</span>
-                </td>
-                <td className="p-4 text-center">
-                  <span className="text-xs font-mono text-slate-300">{ctrl.stop_led}</span>
-                </td>
-                <td className="p-4 text-center">
-                  <div className="flex items-center justify-center gap-2 text-slate-400 font-mono text-xs">
-                    <Sun size={14} className="text-amber-500" />
-                    {Math.round((ctrl.seg_bri / 255) * 100)}%
-                  </div>
-                </td>
-                <td className="p-4 text-center">
-                  <span className="text-xs font-mono text-slate-300">{ctrl.offset}</span>
-                </td>
-                <td className="p-4 text-center">
-                  <span className="text-xs font-mono text-slate-300">{ctrl.grouping}</span>
-                </td>
-                <td className="p-4 text-center">
-                  <span className="text-xs font-mono text-slate-300">{ctrl.spacing}</span>
-                </td>
-                <td className="p-4 text-center">
-                  <input
-                    type="checkbox"
-                    value={ctrl.reverse_direction}
-                    checked={ctrl.reverse_direction}
-                    readOnly
-                    onClick={(e) => e.preventDefault()}
-                    className="w-5 h-5 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0 pointer-events-none"
-                  />
-                </td>
-                <td className="p-4 text-center">
-                  <input
-                    type="checkbox"
-                    value={ctrl.mirror_effect}
-                    checked={ctrl.mirror_effect}
-                    readOnly
-                    onClick={(e) => e.preventDefault()}
-                    className="w-5 h-5 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0 pointer-events-none"
-                  />
-                </td>
-                <td className="p-4 text-right">
-                  <div className="flex justify-end gap-2">
-                    <button onClick={() => openModal(ctrl)} className="cursor-pointer p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all">
-                      <Edit3 size={16} />
-                    </button>
-                    <button
-                      onClick={() => setDeletingId(ctrl.id)}
-                      className="cursor-pointer p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+              {paginatedSegments.length > 0 ? (
+                paginatedSegments.map(ctrl => (
+                  <tr key={ctrl.id} className="hover:bg-slate-800/30 transition-colors group">
+                    <td className="p-4">
+                      <div className="font-bold text-slate-200">Seg#{ctrl.segment_id}</div>
+                      <div className="text-[10px] text-slate-500 uppercase">{ctrl.name}</div>
+                    </td>
+                    <td className="p-4">
+                      <div className="font-bold text-slate-200">{ctrl.controller_name?.name}</div>
+                      <div className="font-bold text-[12px] text-slate-500 uppercase">{ctrl.controller_name?.ip_address}</div>
+                    </td>
+                    <td className="p-4 font-mono text-xs font-bold text-indigo-400">
+                      {ctrl.sort_order}
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="font-bold text-slate-200">{ctrl.start_led}</span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="text-xs font-mono text-slate-300">{ctrl.stop_led}</span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <div className="flex items-center justify-center gap-2 text-slate-400 font-mono text-xs">
+                        <Sun size={14} className="text-amber-500" />
+                        {Math.round((ctrl.seg_bri / 255) * 100)}%
+                      </div>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="text-xs font-mono text-slate-300">{ctrl.offset}</span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="text-xs font-mono text-slate-300">{ctrl.grouping}</span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className="text-xs font-mono text-slate-300">{ctrl.spacing}</span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <input
+                        type="checkbox"
+                        value={ctrl.reverse_direction}
+                        checked={ctrl.reverse_direction}
+                        readOnly
+                        onClick={(e) => e.preventDefault()}
+                        className="w-5 h-5 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0 pointer-events-none"
+                      />
+                    </td>
+                    <td className="p-4 text-center">
+                      <input
+                        type="checkbox"
+                        value={ctrl.mirror_effect}
+                        checked={ctrl.mirror_effect}
+                        readOnly
+                        onClick={(e) => e.preventDefault()}
+                        className="w-5 h-5 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-0 pointer-events-none"
+                      />
+                    </td>
+                    <td className="p-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => openModal(ctrl)} className="cursor-pointer p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all">
+                          <Edit3 size={16} />
+                        </button>
+                        <button
+                          onClick={() => setDeletingId(ctrl.id)}
+                          className="cursor-pointer p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={12}
+                    className="p-8 text-center text-slate-400 italic text-m bg-slate-600/10 justify-center"
+                  >
+                    {controllers.length > 0 ? (
+                      <div>No segment created.</div>
+                    ) : (
+                      <div>
+                        <p>Please create a controller first then create add a segment.</p>
+                        <button
+                          onClick={() => window.location.hash = 'controllers'}
+                          className="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-lg shadow-indigo-500/20"
+                        >
+                          Go to Controllers
+                        </button>
+                      </div>
+                    )}
+
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
 
         {/* PAGINATION FOOTER */}
         <div className="bg-slate-900/50 border-t border-slate-800 px-4 py-3 flex items-center justify-between flex-wrap gap-3 text-xs font-bold text-slate-400">
-            <div className="flex items-center gap-2">
-                <span>Rows per page:</span>
-                <select 
-                    value={segmentRowsPerPage} 
-                    onChange={e => { setSegmentRowsPerPage(Number(e.target.value)); setSegmentPage(1); }}
-                    className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer hover:bg-slate-800/40"
+          <div className="flex items-center gap-2">
+            <span>Rows per page:</span>
+            <select
+              value={segmentRowsPerPage}
+              onChange={e => { setSegmentRowsPerPage(Number(e.target.value)); setSegmentPage(1); }}
+              className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer hover:bg-slate-800/40"
+            >
+              {[5, 10, 25, 50].map(size =>
+                <option
+                  key={size}
+                  value={size}
+                  className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer"
                 >
-                    {[5, 10, 25, 50].map(size => 
-                    <option
-                        key={size}
-                        value={size}
-                        className="bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 outline-none cursor-pointer"
-                    >
-                        {size}
-                    </option>)}
-                </select>
+                  {size}
+                </option>)}
+            </select>
+          </div>
+          <div className="flex items-center gap-4">
+            <span>Page {segmentPage} of {totalSegmentPages}</span>
+            <div className="flex gap-1">
+              <button
+                disabled={segmentPage === 1}
+                onClick={() => setSegmentPage(prev => prev - 1)}
+                className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                disabled={segmentPage === totalSegmentPages}
+                onClick={() => setSegmentPage(prev => prev + 1)}
+                className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
+              >
+                <ChevronRight size={16} />
+              </button>
             </div>
-            <div className="flex items-center gap-4">
-                <span>Page {segmentPage} of {totalSegmentPages}</span>
-                <div className="flex gap-1">
-                    <button 
-                        disabled={segmentPage === 1}
-                        onClick={() => setSegmentPage(prev => prev - 1)}
-                        className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
-                    >
-                        <ChevronLeft size={16} />
-                    </button>
-                    <button 
-                        disabled={segmentPage === totalSegmentPages}
-                        onClick={() => setSegmentPage(prev => prev + 1)}
-                        className="p-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
-                    >
-                        <ChevronRight size={16} />
-                    </button>
-                </div>
-            </div>
+          </div>
         </div>
       </div>
 

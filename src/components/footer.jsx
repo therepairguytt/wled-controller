@@ -27,7 +27,7 @@ export default function Footer({ isCollapsed, systemStatus }) {
     <footer className={`${layoutClasses} justify-between`}>
       <div className="flex items-center gap-4 px-4">
         <span className="text-[10px] text-slate-500 font-mono uppercase tracking-[0.15em]">
-          Copyright &copy; {new Date().getFullYear()} {config?.copyright_name || "WLED CONTROLLER"}. ALL RIGHTS RESERVED.
+          {new Date().getFullYear()} {config?.copyright_name || "WLED CONTROLLER"}
         </span>
       </div>
 

@@ -3,6 +3,7 @@ import api from '../services/api'
 import { Power, Activity, GlobeOff, Wifi, ScrollText, MapPin, Sun, RefreshCw, Zap, Play, PlayCircle, ExternalLink } from 'lucide-react'
 
 export default function Dashboard() {
+  const [groups, setGroups] = useState([])
   const [dashboard, setDashboard] = useState(null)
   const [loading, setLoading] = useState(true)
   const [isApiOnline, setIsApiOnline] = useState(true)
@@ -21,6 +22,19 @@ export default function Dashboard() {
       console.error(e)
     }
   }
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [groupRes] = await Promise.all([
+        api.get('/api/groups')
+      ]);
+      setGroups(groupRes.data)
+    } catch (err) {
+      console.error("Failed to sync settings data", err);
+    }
+  }, []);
+
+  useEffect(() => { fetchData() }, [fetchData]);
 
   const load = useCallback(async () => {
     try {
@@ -237,9 +251,9 @@ export default function Dashboard() {
                           </div>
                         </td>
                         <td className="p-4 text-center">
-                            <a className="inline-flex items-center gap-1 cursor-pointer hover:text-white hover:bg-indigo-800 hover:font-bold hover:underline hover:rounded transition-all ml-1" href={`http://${ctrl.ip_address}`} target="_blank" rel="noopener noreferrer">
-                              {ctrl.ip_address} <ExternalLink size={12}/>
-                            </a>
+                          <a className="inline-flex items-center gap-1 cursor-pointer hover:text-white hover:bg-indigo-800 hover:font-bold hover:underline hover:rounded transition-all ml-1" href={`http://${ctrl.ip_address}`} target="_blank" rel="noopener noreferrer">
+                            {ctrl.ip_address} <ExternalLink size={12} />
+                          </a>
                         </td>
                         <td className="p-4 text-center">
                           <span className="px-2 py-1 bg-slate-800 rounded text-[10px] font-bold text-indigo-400 border border-slate-700 uppercase">
@@ -308,10 +322,30 @@ export default function Dashboard() {
                   ) : (
                     <tr>
                       <td
-                        colSpan="4"
+                        colSpan={8}
                         className="p-8 text-center text-slate-400 italic text-m bg-slate-900 justify-items-center"
                       >
-                        No controllers found.
+                        {groups.length > 0 ? (
+                          <div>
+                            <p>No Controllers found in Database. Create one now!</p>
+                            <button
+                              onClick={() => window.location.hash = 'controllers'}
+                              className="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-lg shadow-indigo-500/20"
+                            >
+                              Add A Controller
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            <p>Please create a group first then create a controller.</p>
+                            <button
+                              onClick={() => window.location.hash = 'settings'}
+                              className="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-lg shadow-indigo-500/20"
+                            >
+                              Go to Groups
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   )}

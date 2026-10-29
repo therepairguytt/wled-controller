@@ -273,11 +273,19 @@ export default function Controllers() {
               ) : (
                 <tr>
                   <td
-                    colSpan="7"
+                    colSpan={8}
                     className="p-8 text-center text-slate-400 italic text-m bg-slate-600/10 justify-center"
                   >
                     {groups.length > 0 ? (
-                      <div>No controllers created.</div>
+                      <div>
+                        <p>No Controllers found in Database. Create one now!</p>
+                        <button
+                          onClick={() => openModal()}
+                          className="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-lg shadow-indigo-500/20"
+                        >
+                          Add A Controller
+                        </button>
+                      </div>
                     ) : (
                       <div>
                         <p>Please create a group first then create a controller.</p>

@@ -298,12 +298,22 @@ export default function Broadcasts() {
       <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800/60 p-6 shadow-xl">
         <div className="flex justify-between pb-4 items-baseline">
           <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Saved Broadcasts</h3>
-          <button
-            onClick={() => openModal()}
-            className="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-indigo-500/20"
-          >
-            <Plus size={16} /> CREATE BROADCAST
-          </button>
+          {controllers.length > 0 ? (
+            <button
+              onClick={() => openModal()}
+              className="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-indigo-500/20"
+            >
+              <Plus size={16} /> CREATE BROADCAST
+            </button>
+          ) : (
+            <button
+              disabled={controllers.length === 0}
+              title="No controllers found in database! Please create one!"
+              className="cursor-not-allowed bg-indigo-600 text-white text-xs font-bold disabled:opacity-50 px-4 py-2 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-indigo-500/20"
+            >
+              <Plus size={16} /> CREATE BROADCAST
+            </button>
+          )}
         </div>
 
         <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950 shadow-xl">
